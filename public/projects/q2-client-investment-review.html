@@ -1,0 +1,2339 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>26Q2 客户业务投放复盘 · 汽车业务中心 · final</title>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5/dist/echarts.min.js"></script>
+<style>
+:root {
+  --primary: #2261F5;
+  --g900:#111827; --g700:#374151; --g500:#6B7280; --g400:#9CA3AF;
+  --g300:#D1D5DB; --g200:#E5E7EB; --g100:#F3F4F6; --g50:#F9FAFB;
+  --white:#FFFFFF;
+  /* 反转色系：增量=红，流失/减少=绿（按用户要求） */
+  --inc:#D95040;
+  --dec:#2EAD5E;
+}
+*,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
+body {
+  font-family:"Inter",-apple-system,"PingFang SC","Helvetica Neue",Arial,sans-serif;
+  background:var(--g50); color:var(--g900); font-size:14px; line-height:1.6;
+  -webkit-font-smoothing:antialiased;
+}
+.page { max-width:1200px; margin:0 auto; padding:48px 32px; }
+
+header { margin-bottom:40px; padding-bottom:24px; border-bottom:1px solid var(--g200); }
+.eyebrow { font-size:11px; color:var(--g500); letter-spacing:0.06em; text-transform:uppercase; font-weight:600; margin-bottom:12px; }
+h1.hero { font-size:32px; font-weight:700; color:var(--g900); letter-spacing:-0.01em; line-height:1.2; margin-bottom:8px; }
+.subtitle { font-size:14px; color:var(--g500); }
+.head-meta { margin-top:20px; display:flex; gap:32px; flex-wrap:wrap; }
+.head-meta .item { font-size:12px; color:var(--g500); }
+.head-meta .item b { color:var(--g900); font-weight:600; font-size:13px; }
+.color-legend {
+  margin-top:16px; padding:10px 14px; background:var(--g50); border-radius:6px;
+  font-size:12px; color:var(--g500); display:flex; gap:24px; flex-wrap:wrap;
+  border:1px dashed var(--g300);
+}
+.color-legend .dot { display:inline-block; width:10px; height:10px; border-radius:2px; vertical-align:middle; margin-right:6px; }
+.dot-inc { background:var(--inc); }
+.dot-dec { background:var(--dec); }
+
+.section { margin-top:48px; }
+.section-eyebrow { font-size:11px; color:var(--primary); letter-spacing:0.06em; text-transform:uppercase; font-weight:600; margin-bottom:8px; }
+h2.h1 { font-size:22px; font-weight:600; color:var(--g900); margin-bottom:6px; letter-spacing:-0.01em; }
+.section-desc { font-size:13px; color:var(--g500); margin-bottom:24px; }
+
+.kpi-row { display:grid; grid-template-columns:repeat(5,1fr); gap:16px; margin-bottom:8px; }
+.kpi { background:var(--white); border:1px solid var(--g200); border-radius:6px; padding:18px 20px; }
+.kpi .label { font-size:11px; color:var(--g500); letter-spacing:0.04em; font-weight:600; text-transform:uppercase; margin-bottom:10px; }
+.kpi .num { font-size:28px; font-weight:700; color:var(--g900); line-height:1; }
+.kpi .num small { font-size:14px; color:var(--g500); font-weight:400; margin-left:4px; }
+.kpi .delta { margin-top:8px; font-size:12px; font-weight:600; }
+.kpi .delta.inc { color:var(--inc); }
+.kpi .delta.dec { color:var(--dec); }
+.kpi .delta.neu { color:var(--g500); }
+.kpi .meta { font-size:11px; color:var(--g400); margin-top:4px; }
+
+.card { background:var(--white); border:1px solid var(--g200); border-radius:6px; padding:24px; margin-bottom:14px; }
+.card-head { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:18px; }
+.card-title { font-size:14px; font-weight:600; color:var(--g900); line-height:1.4; margin-bottom:2px; }
+.card-meta { font-size:11px; color:var(--g400); }
+.card-tag { font-size:11px; color:var(--g400); white-space:nowrap; }
+
+.grid-2 { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+.grid-3 { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; }
+.grid-4 { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; }
+
+table { width:100%; border-collapse:collapse; font-size:13px; }
+table th { font-size:11px; font-weight:600; color:var(--g500); letter-spacing:0.06em; text-transform:uppercase; text-align:left; padding:10px 8px; border-bottom:1px solid var(--g200); }
+table td { padding:9px 8px; border-bottom:1px solid var(--g100); color:var(--g700); }
+table tr:last-child td { border-bottom:none; }
+table tr:hover td { background:var(--g50); }
+table td.num { font-variant-numeric:tabular-nums; }
+table td.center { text-align:center; }
+table td.right { text-align:right; }
+
+.badge { display:inline-block; padding:2px 8px; border-radius:3px; font-size:11px; font-weight:600; line-height:1.5; }
+.badge.lost { background:#DCFCE7; color:#166534; }
+.badge.new  { background:#FEE2E2; color:#B91C1C; }
+.badge.keep { background:#E0E7FF; color:#3730A3; }
+.badge.inc  { background:#FEE2E2; color:#B91C1C; }
+.badge.dec  { background:#DCFCE7; color:#166534; }
+.badge.flat { background:var(--g100); color:var(--g500); }
+.badge.warn { background:#FEF3C7; color:#92400E; }
+.badge.idle { background:#F3F4F6; color:#6B7280; }
+
+.pill-list { display:flex; flex-wrap:wrap; gap:6px; margin-top:10px; }
+.pill { display:inline-block; padding:4px 10px; font-size:12px; border-radius:4px; border:1px solid var(--g200); background:var(--g50); color:var(--g700); }
+.pill.lost { background:#F0FDF4; border-color:#BBF7D0; color:#166534; }
+.pill.new  { background:#FEF2F2; border-color:#FECACA; color:#B91C1C; }
+
+.stat-block { display:flex; gap:24px; padding:14px 18px; background:var(--g50); border-radius:6px; margin-top:12px; }
+.stat-block .stat .label { font-size:11px; color:var(--g500); margin-bottom:4px; }
+.stat-block .stat .val { font-size:18px; font-weight:700; color:var(--g900); }
+.stat-block .stat.lost .val { color:var(--dec); }
+.stat-block .stat.new  .val { color:var(--inc); }
+
+.hl-box { background:var(--g50); border-left:3px solid var(--primary); padding:14px 18px; margin:16px 0; font-size:13px; color:var(--g700); line-height:1.7; }
+.hl-box b { color:var(--g900); font-weight:600; }
+.hl-box .hl-num { color:var(--primary); font-weight:700; font-variant-numeric:tabular-nums; }
+.hl-box .hl-inc { color:var(--inc); font-weight:600; }
+.hl-box .hl-dec { color:var(--dec); font-weight:600; }
+
+footer { margin-top:64px; padding-top:24px; border-top:1px solid var(--g200); font-size:12px; color:var(--g400); display:flex; justify-content:space-between; }
+
+table.compact th, table.compact td { padding:7px 8px; font-size:12px; }
+table.compact th { font-size:10px; }
+
+.cell-ind { display:inline-block; width:16px; height:16px; line-height:16px; text-align:center; font-size:11px; border-radius:2px; font-weight:600; }
+.cell-1 { background:#DCEAFE; color:#1E40AF; }
+.cell-0 { background:var(--g100); color:var(--g400); }
+
+.tag-inc  { color:var(--inc); font-weight:600; }
+.tag-dec  { color:var(--dec); font-weight:600; }
+.tag-flat { color:var(--g500); }
+
+.divider { height:1px; background:var(--g200); margin:8px 0 18px; }
+</style>
+</head>
+<body>
+<div class="page">
+
+<!-- ============== HEADER ============== -->
+<header>
+  <div class="eyebrow">QUARTERLY REVIEW · 26Q2 · FINAL</div>
+  <h1 class="hero">26Q2 客户业务投放复盘 · 汽车业务中心</h1>
+  <div class="subtitle">基于 4 条业务线（品牌 / 聚星 / 车型效果 / 阵地）的客户实际在投情况  ·  对比口径：26Q2 vs 26Q1  ·  全量分母：69 家</div>
+  <div class="head-meta">
+    <div class="item">客户口径 <b>汽车主机厂集团</b></div>
+    <div class="item">业务线条数 <b>4 条</b></div>
+    <div class="item">全量集团数 <b>69 家</b></div>
+    <div class="item">分析周期 <b>26Q1 → 26Q2</b></div>
+    <div class="item">报告日期 <b>2026-06-23</b></div>
+    <div class="item">数据底表 <b>客户业务线渗透情况_final.xlsx</b></div>
+  </div>
+  <div class="color-legend">
+    <span><b>颜色说明（本报告专用配色）：</b></span>
+    <span><span class="dot dot-inc"></span> 红色 = 新增 / 业务覆盖提升 / 渗透率扩大</span>
+    <span><span class="dot dot-dec"></span> 绿色 = 流失 / 业务覆盖下降 / 渗透率收窄</span>
+  </div>
+</header>
+
+<!-- ============== KPI ROW ============== -->
+<div class="kpi-row">
+  <div class="kpi">
+    <div class="label">总体覆盖客户</div>
+    <div class="num">44<small>/69</small></div>
+    <div class="delta inc">+1 家（43→44）</div>
+    <div class="meta">总渗透率 62.3% → 63.8%（+1.4pp）</div>
+  </div>
+  <div class="kpi">
+    <div class="label">投放盘进出</div>
+    <div class="num">0<small> · 1</small></div>
+    <div class="delta neu">流失 0 / 激活 1</div>
+    <div class="meta">极氪汽车从零投放升级为开投</div>
+  </div>
+  <div class="kpi">
+    <div class="label">变化标签 · 无变化客户</div>
+    <div class="num">53<small>家</small></div>
+    <div class="delta neu">基本盘 77%</div>
+    <div class="meta">含 25 家持续零投放</div>
+  </div>
+  <div class="kpi">
+    <div class="label">覆盖提升客户</div>
+    <div class="num">7<small>家</small></div>
+    <div class="delta inc">↑ 含 1 家激活</div>
+    <div class="meta">仅一汽大众升至全渗透</div>
+  </div>
+  <div class="kpi">
+    <div class="label">覆盖下降客户</div>
+    <div class="num">8<small>家</small></div>
+    <div class="delta dec">↓ 含 2 家 -2 重创</div>
+    <div class="meta">比亚迪、上汽通用五菱</div>
+  </div>
+</div>
+
+<!-- ============== 一、大盘 ============== -->
+<div class="section">
+  <div class="section-eyebrow">PART 01 · 大盘表现</div>
+  <h2 class="h1">4 条业务线分化加剧：品牌业务断崖下跌成为最大警讯</h2>
+  <div class="section-desc">总体覆盖 +1 家完全由车型效果（+2）和阵地（+1）拉动；<b>品牌（-4，-5.8pp）</b>跌幅超过聚星（-2，-2.9pp）成为本季最大警讯，车型效果（+2.9pp）是唯一的强劲增量。</div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-head">
+        <div>
+          <div class="card-title">业务线在投客户数：品牌 -4（最大跌幅）/ 聚星 -2 / 车型效果 +2 / 阵地 +1</div>
+          <div class="card-meta">26Q1 vs 26Q2 · 单位：家</div>
+        </div>
+        <span class="card-tag">客户家数</span>
+      </div>
+      <div id="chart-biz-count" style="height:280px;"></div>
+    </div>
+    <div class="card">
+      <div class="card-head">
+        <div>
+          <div class="card-title">业务线渗透率：品牌 -5.8pp（最大跌幅）/ 车型效果 +2.9pp（最强增量）</div>
+          <div class="card-meta">渗透率 = 在投客户 / 69 · 单位：%</div>
+        </div>
+        <span class="card-tag">渗透率</span>
+      </div>
+      <div id="chart-biz-rate" style="height:280px;"></div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head">
+      <div>
+        <div class="card-title">4 业务线 Q1 → Q2 关键指标对照</div>
+        <div class="card-meta">含家数变化、渗透率变化与内部结构变化</div>
+      </div>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>业务线</th>
+          <th class="right">Q1 家数</th>
+          <th class="right">Q2 家数</th>
+          <th class="right">家数 Δ</th>
+          <th class="right">Q1 渗透率</th>
+          <th class="right">Q2 渗透率</th>
+          <th class="right">渗透率 Δ</th>
+          <th>结构变化（持续 / 流失 / 新增）</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><b>品牌</b></td>
+          <td class="right num">10</td><td class="right num">6</td>
+          <td class="right num tag-dec"><b>-4</b></td>
+          <td class="right num">14.5%</td><td class="right num">8.7%</td>
+          <td class="right num tag-dec"><b>-5.8 pp</b></td>
+          <td>持续 5 / 流失 5 / 新增 1 · 留存率 50% · <b>本季最大警讯</b></td>
+        </tr>
+        <tr>
+          <td><b>聚星</b></td>
+          <td class="right num">8</td><td class="right num">6</td>
+          <td class="right num tag-dec">-2</td>
+          <td class="right num">11.6%</td><td class="right num">8.7%</td>
+          <td class="right num tag-dec">-2.9 pp</td>
+          <td>持续 3 / 流失 5 / 新增 3 · 留存率 <b>37.5%</b></td>
+        </tr>
+        <tr>
+          <td><b>车型效果</b></td>
+          <td class="right num">11</td><td class="right num">13</td>
+          <td class="right num tag-inc">+2</td>
+          <td class="right num">15.9%</td><td class="right num">18.8%</td>
+          <td class="right num tag-inc">+2.9 pp</td>
+          <td>持续 10 / 流失 1 / 新增 3 · 留存率 <b>90.9%</b></td>
+        </tr>
+        <tr>
+          <td><b>阵地</b></td>
+          <td class="right num">43</td><td class="right num">44</td>
+          <td class="right num tag-inc">+1</td>
+          <td class="right num">62.3%</td><td class="right num">63.8%</td>
+          <td class="right num tag-inc">+1.4 pp</td>
+          <td>持续 43 / 流失 0 / 新增 1（极氪） · 留存率 100%</td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="hl-box">
+      <b>核心结论：</b>① 整体覆盖 +1 完全由<span class="hl-inc">车型效果（+2）与阵地（+1）</span>拉动；② <span class="hl-dec">品牌业务渗透率 -5.8pp 跌幅惊人</span>，是本季最大警讯，留存率仅 50%，流失了 5 家、新增仅 1 家；③ <b>聚星业务连续衰退</b>，留存率 37.5% 业务连续性最弱；④ <span class="hl-inc">车型效果业务首次成为非阵地外的最强业务线（18.8%）</span>，留存率 90.9% 业务粘性最高。
+    </div>
+  </div>
+</div>
+
+<!-- ============== 二、客户进出 ============== -->
+<div class="section">
+  <div class="section-eyebrow">PART 02 · 客户进出</div>
+  <h2 class="h1">69 家全量视角 · 投放盘扩容 1 家、零投放客户从 26 减至 25</h2>
+  <div class="section-desc">这一节用 final 底表完整的 69 家分母分析。<b>投放盘 0 流失 + 1 激活</b>（极氪），<b>25 家持续零投放客户</b>是 Q3 重要的拓展池。</div>
+
+  <div class="grid-3">
+    <div class="card">
+      <div class="card-head">
+        <div>
+          <div class="card-title">投放盘流失（Q1 有投放 / Q2 零投放）</div>
+          <div class="card-meta">从有投放退回到零投放</div>
+        </div>
+        <span class="card-tag">大盘视角</span>
+      </div>
+      <div class="stat-block">
+        <div class="stat lost">
+          <div class="label">流失数</div>
+          <div class="val">0 家</div>
+        </div>
+        <div class="stat">
+          <div class="label">流失率</div>
+          <div class="val">0.0%</div>
+        </div>
+      </div>
+      <div class="hl-box" style="border-left-color:var(--dec);background:#F0FDF4;margin-top:14px;">
+        <b>投放盘基本盘 100% 守住</b>，无任何投放客户回退至零投放。
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head">
+        <div>
+          <div class="card-title">投放盘激活（Q1 零投放 / Q2 开始投放）</div>
+          <div class="card-meta">首次进入投放盘的客户</div>
+        </div>
+        <span class="card-tag">隐藏增量</span>
+      </div>
+      <div class="stat-block">
+        <div class="stat new">
+          <div class="label">激活客户</div>
+          <div class="val">1 家</div>
+        </div>
+        <div class="stat">
+          <div class="label">起步业务线</div>
+          <div class="val">阵地</div>
+        </div>
+      </div>
+      <div class="hl-box" style="border-left-color:var(--inc);background:#FEF2F2;margin-top:14px;">
+        <b>极氪汽车</b>（20w以上/新能源/自主）首次开投，是 Q2 唯一从零投放进入投放盘的客户。
+      </div>
+    </div>
+
+    <div class="card" style="border-left:3px solid var(--g400);">
+      <div class="card-head">
+        <div>
+          <div class="card-title">持续零投放客户（Q1+Q2 均零投放）</div>
+          <div class="card-meta">Q3 拓展候选池</div>
+        </div>
+        <span class="card-tag">拓展机会</span>
+      </div>
+      <div class="stat-block">
+        <div class="stat">
+          <div class="label">未开发客户</div>
+          <div class="val">25 家</div>
+        </div>
+        <div class="stat">
+          <div class="label">占比</div>
+          <div class="val">36.2%</div>
+        </div>
+      </div>
+      <div class="hl-box" style="border-left-color:var(--g400);background:var(--g50);margin-top:14px;">
+        <b>25 家 / 69 家集团从未开投</b>，是 Q3 拓展的核心候选池，建议筛选 5-10 家重点突破。
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============== 三、各业务线客户流动 ============== -->
+<div class="section">
+  <div class="section-eyebrow">PART 03 · 业务线客户流动明细（晒名单）</div>
+  <h2 class="h1">分业务线 · 流失 / 新增客户清单（<span style="color:var(--dec);">绿=流失</span> / <span style="color:var(--inc);">红=新增</span>）</h2>
+  <div class="section-desc">以下 4 张表为各业务线对应同学的工作清单，包含「持续投放」「流失客户」「新增客户」三类，可直接发给业务线负责人。</div>
+
+  <div class="card" style="border-left:3px solid var(--dec); border-width:5px;">
+    <div class="card-head">
+      <div>
+        <div class="card-title">品牌业务 · Q1 10 家 → Q2 6 家（-4，本季最大跌幅，渗透率 -5.8pp）</div>
+        <div class="card-meta">持续 5 · 流失 5 · 新增 1 · 留存率 50% · ⚠️ 重点关注</div>
+      </div>
+      <span class="card-tag" style="color:var(--dec);font-weight:600;">渗透率 -5.8pp</span>
+    </div>
+    <div class="grid-3">
+      <div>
+        <div style="font-size:11px;color:var(--g500);font-weight:600;letter-spacing:0.04em;text-transform:uppercase;margin-bottom:6px;">流失（5 家）<span class="badge lost" style="margin-left:6px;">紧急</span></div>
+        <div class="pill-list">
+          <span class="pill lost">上汽大众</span>
+          <span class="pill lost">上汽通用五菱</span>
+          <span class="pill lost">东风日产</span>
+          <span class="pill lost">比亚迪</span>
+          <span class="pill lost">起亚汽车</span>
+        </div>
+        <div style="font-size:11px;color:var(--g400);margin-top:8px;">5 家流失中 <b>4 家合资 + 1 家自主（比亚迪）</b></div>
+      </div>
+      <div>
+        <div style="font-size:11px;color:var(--g500);font-weight:600;letter-spacing:0.04em;text-transform:uppercase;margin-bottom:6px;">新增（1 家）<span class="badge new" style="margin-left:6px;">增量</span></div>
+        <div class="pill-list">
+          <span class="pill new">长安汽车</span>
+        </div>
+        <div style="font-size:11px;color:var(--g400);margin-top:8px;">仅 1 家自主品牌新增</div>
+      </div>
+      <div>
+        <div style="font-size:11px;color:var(--g500);font-weight:600;letter-spacing:0.04em;text-transform:uppercase;margin-bottom:6px;">持续投放（5 家）<span class="badge keep" style="margin-left:6px;">基本盘</span></div>
+        <div style="font-size:12px;color:var(--g500);line-height:1.7;">
+          一汽丰田、一汽大众、一汽捷达、北汽集团、零跑汽车
+        </div>
+      </div>
+    </div>
+    <div class="hl-box" style="border-left-color:var(--dec);background:#F0FDF4;">
+      <b>品牌业务核心信号（本季最严重）：</b>① <span class="hl-dec">5 家流失 vs 仅 1 家新增</span>，净流失 4 家，留存率仅 50%；② <span class="hl-dec">比亚迪从全渗透回落</span>导致品牌业务也掉了；③ 流失客户主要集中在合资品牌（4/5 为合资）；④ Q2 仅长安汽车 1 家自主新增，承接力严重不足。
+    </div>
+  </div>
+
+  <div class="card" style="border-left:3px solid var(--dec);">
+    <div class="card-head">
+      <div>
+        <div class="card-title">聚星业务 · Q1 8 家 → Q2 6 家（-2，本季最大跌幅）</div>
+        <div class="card-meta">持续 3 · 流失 5 · 新增 3 · 留存率 37.5%</div>
+      </div>
+      <span class="card-tag" style="color:var(--dec);">渗透率 -2.9pp</span>
+    </div>
+    <div class="grid-3">
+      <div>
+        <div style="font-size:11px;color:var(--g500);font-weight:600;letter-spacing:0.04em;text-transform:uppercase;margin-bottom:6px;">流失（5 家）<span class="badge lost" style="margin-left:6px;">紧急</span></div>
+        <div class="pill-list">
+          <span class="pill lost">一汽红旗</span>
+          <span class="pill lost">上汽通用五菱</span>
+          <span class="pill lost">北汽集团</span>
+          <span class="pill lost">广汽丰田</span>
+          <span class="pill lost">比亚迪</span>
+        </div>
+      </div>
+      <div>
+        <div style="font-size:11px;color:var(--g500);font-weight:600;letter-spacing:0.04em;text-transform:uppercase;margin-bottom:6px;">新增（3 家）<span class="badge new" style="margin-left:6px;">增量</span></div>
+        <div class="pill-list">
+          <span class="pill new">一汽大众</span>
+          <span class="pill new">上汽名爵&amp;荣威</span>
+          <span class="pill new">零跑汽车</span>
+        </div>
+      </div>
+      <div>
+        <div style="font-size:11px;color:var(--g500);font-weight:600;letter-spacing:0.04em;text-transform:uppercase;margin-bottom:6px;">持续投放（3 家）<span class="badge keep" style="margin-left:6px;">基本盘</span></div>
+        <div class="pill-list">
+          <span class="pill">一汽捷达</span>
+          <span class="pill">上汽大众</span>
+          <span class="pill">吉利汽车</span>
+        </div>
+      </div>
+    </div>
+    <div class="hl-box" style="border-left-color:var(--dec);background:#F0FDF4;">
+      <b>聚星业务核心风险点：</b>① 留存率仅 <span class="hl-dec">37.5%（3/8）</span>，业务连续性最弱；② <span class="hl-dec">比亚迪从全渗透回落到 2 条</span>（连品牌都掉了，-2 重创）、<b>广汽丰田、北汽集团</b>等中坚客户流失，须立即对接归因；③ 新增的一汽大众是亮点，从 3 条升至 4 条全渗透。
+    </div>
+  </div>
+
+  <div class="card" style="border-left:3px solid var(--inc);">
+    <div class="card-head">
+      <div>
+        <div class="card-title">车型效果业务 · Q1 11 家 → Q2 13 家（+2，本季最大亮点）</div>
+        <div class="card-meta">持续 10 · 流失 1 · 新增 3 · 留存率 90.9%</div>
+      </div>
+      <span class="card-tag" style="color:var(--inc);">渗透率 +2.9pp</span>
+    </div>
+    <div class="grid-3">
+      <div>
+        <div style="font-size:11px;color:var(--g500);font-weight:600;letter-spacing:0.04em;text-transform:uppercase;margin-bottom:6px;">流失（1 家）<span class="badge lost" style="margin-left:6px;">需关注</span></div>
+        <div class="pill-list">
+          <span class="pill lost">上汽通用</span>
+        </div>
+      </div>
+      <div>
+        <div style="font-size:11px;color:var(--g500);font-weight:600;letter-spacing:0.04em;text-transform:uppercase;margin-bottom:6px;">新增（3 家）<span class="badge new" style="margin-left:6px;">增量</span></div>
+        <div class="pill-list">
+          <span class="pill new">上汽大众</span>
+          <span class="pill new">北京现代</span>
+          <span class="pill new">长安马自达</span>
+        </div>
+        <div style="font-size:11px;color:var(--g400);margin-top:8px;">新增均为<b>合资品牌</b></div>
+      </div>
+      <div>
+        <div style="font-size:11px;color:var(--g500);font-weight:600;letter-spacing:0.04em;text-transform:uppercase;margin-bottom:6px;">持续投放（10 家）<span class="badge keep" style="margin-left:6px;">基本盘</span></div>
+        <div style="font-size:12px;color:var(--g500);line-height:1.7;">
+          一汽丰田、一汽大众、东风日产、吉利汽车、广汽丰田、方程豹汽车、比亚迪、深蓝汽车、长安凯程、长安汽车
+        </div>
+      </div>
+    </div>
+    <div class="hl-box" style="border-left-color:var(--inc);background:#FEF2F2;">
+      <b>车型效果业务核心信号：</b>① 留存率 90.9%（10/11）业务粘性最强；② <span class="hl-inc">3 家新增（上汽大众、北京现代、长安马自达）全部为合资</span>，与品牌业务流失的合资客户形成「业务线之间的迁移」；③ <b>合资客户正在从品牌业务转向车型效果业务</b>。
+    </div>
+  </div>
+
+  <div class="card" style="border-left:3px solid var(--inc);">
+    <div class="card-head">
+      <div>
+        <div class="card-title">阵地业务 · Q1 43 家 → Q2 44 家（+1，仅极氪新增）</div>
+        <div class="card-meta">持续 43 · 流失 0 · 新增 1 · 留存率 100%</div>
+      </div>
+      <span class="card-tag" style="color:var(--inc);">渗透率 +1.4pp</span>
+    </div>
+    <div class="grid-3">
+      <div>
+        <div style="font-size:11px;color:var(--g500);font-weight:600;letter-spacing:0.04em;text-transform:uppercase;margin-bottom:6px;">流失（0 家）</div>
+        <div style="font-size:12px;color:var(--g400);font-style:italic;padding:8px 0;">本季无流失</div>
+      </div>
+      <div>
+        <div style="font-size:11px;color:var(--g500);font-weight:600;letter-spacing:0.04em;text-transform:uppercase;margin-bottom:6px;">新增（1 家）<span class="badge new" style="margin-left:6px;">激活</span></div>
+        <div class="pill-list">
+          <span class="pill new">极氪汽车</span>
+        </div>
+      </div>
+      <div>
+        <div style="font-size:11px;color:var(--g500);font-weight:600;letter-spacing:0.04em;text-transform:uppercase;margin-bottom:6px;">持续投放（43 家）<span class="badge keep" style="margin-left:6px;">基本盘</span></div>
+        <div style="font-size:12px;color:var(--g500);line-height:1.7;">
+          全部 Q1 在投客户均持续投放，<b>留存率 100%</b>，是业务底座。
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============== 四、客户级覆盖变化 ============== -->
+<div class="section">
+  <div class="section-eyebrow">PART 04 · 客户级覆盖变化</div>
+  <h2 class="h1">客户级变化全景：7 提升 / 54 不变 / 8 下降</h2>
+  <div class="section-desc">基于业务侧已标准化的「变化」标签，全 69 家客户的覆盖变化分布如下：</div>
+
+  <div class="card">
+    <div class="card-head">
+      <div>
+        <div class="card-title">变化标签分布（v3 底表标准分类）</div>
+        <div class="card-meta">业务侧已标注的变化类型，共 10 种</div>
+      </div>
+    </div>
+    <div id="chart-change-tags" style="height:300px;"></div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-head">
+        <div>
+          <div class="card-title">业务覆盖提升客户（9 家）</div>
+          <div class="card-meta">Q2 比 Q1 多投放 1 条以上业务</div>
+        </div>
+        <span class="card-tag" style="color:var(--inc);">明星客户</span>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>客户</th>
+            <th class="center">Q1</th>
+            <th class="center">Q2</th>
+            <th class="center">变化</th>
+            <th>具体动作</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td><b>一汽大众</b><span class="badge inc" style="margin-left:6px;font-size:10px;">全渗透 ★</span></td><td class="center num">3</td><td class="center num">4</td><td class="center"><span class="tag-inc">+1</span></td><td>+ 聚星</td></tr>
+          <tr><td>长安汽车</td><td class="center num">2</td><td class="center num">3</td><td class="center"><span class="tag-inc">+1</span></td><td>+ 品牌</td></tr>
+          <tr><td>零跑汽车</td><td class="center num">2</td><td class="center num">3</td><td class="center"><span class="tag-inc">+1</span></td><td>+ 聚星</td></tr>
+          <tr><td>上汽名爵&amp;荣威</td><td class="center num">1</td><td class="center num">2</td><td class="center"><span class="tag-inc">+1</span></td><td>+ 聚星</td></tr>
+          <tr><td>北京现代</td><td class="center num">1</td><td class="center num">2</td><td class="center"><span class="tag-inc">+1</span></td><td>+ 车型效果</td></tr>
+          <tr><td>长安马自达</td><td class="center num">1</td><td class="center num">2</td><td class="center"><span class="tag-inc">+1</span></td><td>+ 车型效果</td></tr>
+          <tr><td><b>极氪汽车</b><span class="badge new" style="margin-left:6px;font-size:10px;">激活</span></td><td class="center num">0</td><td class="center num">1</td><td class="center"><span class="tag-inc">+1</span></td><td>+ 阵地（首次开投）</td></tr>
+        </tbody>
+      </table>
+      <div class="hl-box" style="border-left-color:var(--inc);background:#FEF2F2;">
+        <b>全渗透客户从 1 家保持 1 家</b>：Q1 全渗透客户是比亚迪，<span class="hl-dec">比亚迪 Q2 跌至 2 条</span>退出全渗透；同期 <span class="hl-inc">一汽大众从 3 条升至 4 条全渗透</span>补位。头部客户结构发生切换，但<b>顶层规模没有扩张</b>。
+      </div>
+    </div>
+
+    <div class="card" style="border-left:3px solid var(--dec);">
+      <div class="card-head">
+        <div>
+          <div class="card-title">业务覆盖下降客户（8 家）</div>
+          <div class="card-meta">Q2 比 Q1 少投放 1 条以上业务</div>
+        </div>
+        <span class="card-tag" style="color:var(--dec);">需重点跟进</span>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>客户</th>
+            <th class="center">Q1</th>
+            <th class="center">Q2</th>
+            <th class="center">变化</th>
+            <th>具体动作</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td><b>上汽通用五菱</b><span class="badge lost" style="margin-left:6px;font-size:10px;">-2 重创</span></td><td class="center num">3</td><td class="center num">1</td><td class="center"><span class="tag-dec">-2</span></td><td>- 品牌、- 聚星</td></tr>
+          <tr><td><b>比亚迪</b><span class="badge lost" style="margin-left:6px;font-size:10px;">-2 重创 / 全渗透坠落</span></td><td class="center num">4</td><td class="center num">2</td><td class="center"><span class="tag-dec">-2</span></td><td>- 品牌、- 聚星</td></tr>
+          <tr><td>北汽集团</td><td class="center num">3</td><td class="center num">2</td><td class="center"><span class="tag-dec">-1</span></td><td>- 聚星</td></tr>
+          <tr><td>东风日产</td><td class="center num">3</td><td class="center num">2</td><td class="center"><span class="tag-dec">-1</span></td><td>- 品牌</td></tr>
+          <tr><td>广汽丰田</td><td class="center num">3</td><td class="center num">2</td><td class="center"><span class="tag-dec">-1</span></td><td>- 聚星</td></tr>
+          <tr><td>一汽红旗</td><td class="center num">2</td><td class="center num">1</td><td class="center"><span class="tag-dec">-1</span></td><td>- 聚星</td></tr>
+          <tr><td>上汽通用</td><td class="center num">2</td><td class="center num">1</td><td class="center"><span class="tag-dec">-1</span></td><td>- 车型效果</td></tr>
+          <tr><td>起亚汽车</td><td class="center num">2</td><td class="center num">1</td><td class="center"><span class="tag-dec">-1</span></td><td>- 品牌</td></tr>
+        </tbody>
+      </table>
+      <div class="hl-box" style="border-left-color:var(--dec);background:#F0FDF4;">
+        <b>下降归因高度集中：</b>① <span class="hl-dec">本季出现 2 家 -2 重创客户</span>：比亚迪（4→2，唯一的 Q1 全渗透客户）和上汽通用五菱（3→1，跌至仅剩阵地）；② 5 家因聚星业务流失、3 家因品牌业务流失、1 家因车型业务流失；③ <b>比亚迪和上汽通用五菱</b>是 Q3 头号重点回追对象。
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head">
+      <div>
+        <div class="card-title">业务覆盖数分布：哑铃化结构（头部加深 / 中段塌陷）</div>
+        <div class="card-meta">基于 69 家全量分母（含 25 家持续零投放）</div>
+      </div>
+    </div>
+    <div id="chart-distribution" style="height:300px;"></div>
+    <div class="hl-box">
+      <b>结构变化：</b>① 全渗透客户 <span class="hl-num">1→1</span>（持平，比亚迪退出 + 一汽大众补位）；② 覆盖 3 条业务的客户 <span class="hl-num">9→6</span>（中段塌陷-3）；③ 覆盖 2 条业务的客户 <span class="hl-num">8→10</span>（+2）；④ 覆盖 1 条业务的客户 <span class="hl-num">25→27</span>（基础扩大+2）；⑤ 零投放客户 <span class="hl-num">26→25</span>（极氪激活-1）。整体呈<b>「中部塌陷、底部扩大」</b>趋势。
+    </div>
+  </div>
+</div>
+
+<!-- ============== 五、维度交叉 ============== -->
+<div class="section">
+  <div class="section-eyebrow">PART 05 · 维度交叉分析</div>
+  <h2 class="h1">合资品牌持续下滑 / 自主品牌停止增长</h2>
+  <div class="section-desc">从价格区间、能源类型、品牌属性三个维度切片，定位变化的结构特征。<b>合资 -0.10、自主 ±0.00，整体广度持平、深度收缩</b>。</div>
+
+  <div class="grid-3">
+    <div class="card">
+      <div class="card-head">
+        <div>
+          <div class="card-title">价格区间</div>
+          <div class="card-meta">人均在投业务线数（基于全分母）</div>
+        </div>
+      </div>
+      <table class="compact">
+        <thead>
+          <tr><th>区间</th><th class="right">总数</th><th class="right">Q1 投放</th><th class="right">Q2 投放</th><th class="right">Δ均</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><b>10-20w</b></td><td class="right num">40</td><td class="right num">32</td><td class="right num">32</td><td class="right tag-dec">-0.02</td></tr>
+          <tr><td><b>20w以上</b></td><td class="right num">25</td><td class="right num">8</td><td class="right num">9</td><td class="right tag-flat">±0.00</td></tr>
+          <tr><td><b>10w以下</b></td><td class="right num">4</td><td class="right num">3</td><td class="right num">3</td><td class="right tag-dec">-0.50</td></tr>
+        </tbody>
+      </table>
+      <div style="font-size:12px;color:var(--g500);margin-top:10px;line-height:1.6;">
+        主力 10-20w 微降 -0.02；20w 以上 +1 家投放（极氪）；10w 以下小客户群<b>大幅下滑 -0.50</b>（上汽通用五菱重创）。
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head">
+        <div>
+          <div class="card-title">能源类型</div>
+          <div class="card-meta">人均在投业务线数（基于全分母）</div>
+        </div>
+      </div>
+      <table class="compact">
+        <thead>
+          <tr><th>类型</th><th class="right">总数</th><th class="right">Q1 投放</th><th class="right">Q2 投放</th><th class="right">Δ均</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><b>燃油</b></td><td class="right num">42</td><td class="right num">30</td><td class="right num">30</td><td class="right tag-dec">-0.02</td></tr>
+          <tr><td><b>新能源</b></td><td class="right num">27</td><td class="right num">13</td><td class="right num">14</td><td class="right tag-dec">-0.07</td></tr>
+        </tbody>
+      </table>
+      <div style="font-size:12px;color:var(--g500);margin-top:10px;line-height:1.6;">
+        新能源 +1 家投放（极氪），但<b>人均覆盖深度下滑 -0.07</b>（比亚迪 -2 重创拖累）。
+      </div>
+    </div>
+
+    <div class="card" style="border:2px solid var(--inc);">
+      <div class="card-head">
+        <div>
+          <div class="card-title">品牌属性 · 本季最强信号</div>
+          <div class="card-meta">人均在投业务线数（基于全分母）</div>
+        </div>
+      </div>
+      <table class="compact">
+        <thead>
+          <tr><th>属性</th><th class="right">总数</th><th class="right">Q1 投放</th><th class="right">Q2 投放</th><th class="right">Δ均</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><b>合资</b></td><td class="right num">31</td><td class="right num">17</td><td class="right num">17</td><td class="right tag-dec"><b>-0.10</b></td></tr>
+          <tr><td><b>自主</b></td><td class="right num">38</td><td class="right num">26</td><td class="right num">27</td><td class="right tag-flat"><b>±0.00</b></td></tr>
+        </tbody>
+      </table>
+      <div style="font-size:12px;color:var(--g500);margin-top:10px;line-height:1.6;">
+        <b>合资客户业务深度全面收缩、自主客户深度持平</b>（不再上升），<b>本季两端都在收缩或停滞</b>。
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head">
+      <div>
+        <div class="card-title">维度 × 业务线 在投客户数 Q1 → Q2（<span style="color:var(--inc);">红</span>=新增/扩张 / <span style="color:var(--dec);">绿</span>=流失/收缩）</div>
+        <div class="card-meta">单位：家</div>
+      </div>
+    </div>
+    <table>
+      <thead>
+        <tr>
+          <th>维度</th><th>分类</th>
+          <th class="right">品牌</th>
+          <th class="right">聚星</th>
+          <th class="right">车型效果</th>
+          <th class="right">阵地</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td rowspan="3"><b>价格区间</b></td>
+          <td>10-20w</td>
+          <td class="right num">9→6 <span class="tag-dec"><b>(-3)</b></span></td>
+          <td class="right num">6→6 <span class="tag-flat">(±0)</span></td>
+          <td class="right num">9→11 <span class="tag-inc">(+2)</span></td>
+          <td class="right num">32→32 <span class="tag-flat">(±0)</span></td>
+        </tr>
+        <tr>
+          <td>20w以上</td>
+          <td class="right num">0→0 <span class="tag-flat">(±0)</span></td>
+          <td class="right num">1→0 <span class="tag-dec">(-1)</span></td>
+          <td class="right num">1→1 <span class="tag-flat">(±0)</span></td>
+          <td class="right num">8→9 <span class="tag-inc">(+1)</span></td>
+        </tr>
+        <tr>
+          <td>10w以下</td>
+          <td class="right num">1→0 <span class="tag-dec">(-1)</span></td>
+          <td class="right num">1→0 <span class="tag-dec">(-1)</span></td>
+          <td class="right num">1→1 <span class="tag-flat">(±0)</span></td>
+          <td class="right num">3→3 <span class="tag-flat">(±0)</span></td>
+        </tr>
+        <tr>
+          <td rowspan="2"><b>能源类型</b></td>
+          <td>燃油</td>
+          <td class="right num">7→5 <span class="tag-dec">(-2)</span></td>
+          <td class="right num">6→5 <span class="tag-dec">(-1)</span></td>
+          <td class="right num">8→10 <span class="tag-inc">(+2)</span></td>
+          <td class="right num">30→30 <span class="tag-flat">(±0)</span></td>
+        </tr>
+        <tr>
+          <td>新能源</td>
+          <td class="right num">3→1 <span class="tag-dec">(-2)</span></td>
+          <td class="right num">2→1 <span class="tag-dec">(-1)</span></td>
+          <td class="right num">3→3 <span class="tag-flat">(±0)</span></td>
+          <td class="right num">13→14 <span class="tag-inc">(+1)</span></td>
+        </tr>
+        <tr>
+          <td rowspan="2"><b>品牌属性</b></td>
+          <td>合资</td>
+          <td class="right num">7→3 <span class="tag-dec"><b>(-4)</b></span></td>
+          <td class="right num">4→3 <span class="tag-dec">(-1)</span></td>
+          <td class="right num">5→7 <span class="tag-inc">(+2)</span></td>
+          <td class="right num">17→17 <span class="tag-flat">(±0)</span></td>
+        </tr>
+        <tr>
+          <td>自主</td>
+          <td class="right num">3→3 <span class="tag-flat">(±0)</span></td>
+          <td class="right num">4→3 <span class="tag-dec">(-1)</span></td>
+          <td class="right num">6→6 <span class="tag-flat">(±0)</span></td>
+          <td class="right num">26→27 <span class="tag-inc">(+1)</span></td>
+        </tr>
+      </tbody>
+    </table>
+    <div class="hl-box">
+      <b>核心结构信号（final 数据）：</b>① <span class="hl-dec">合资品牌「品牌业务」线断崖式下跌 -4 家</span>（上汽大众、上汽通用五菱、东风日产、起亚汽车）；② <span class="hl-dec">自主品牌「品牌业务」线持平（3→3）</span>，仅 1 家长安汽车新增、抵消 1 家比亚迪流失，<b>承接力远低于预期</b>；③ 合资客户在车型效果业务承接（+2 全合资），形成业务线之间的迁移；④ 聚星业务在所有维度下都在收缩。
+    </div>
+  </div>
+</div>
+
+<!-- ============== 六、客户全景表 ============== -->
+<div class="section">
+  <div class="section-eyebrow">PART 06 · 客户全景明细</div>
+  <h2 class="h1">69 家客户 · 4 业务线 Q1↔Q2 全量对照</h2>
+  <div class="section-desc">完整客户级明细（含25家持续零投放客户），按业务覆盖数变化分组。● = 投放 / ○ = 未投放 / <span style="color:var(--dec);">绿底●</span> = 该业务流失 / <span style="color:var(--inc);">红底●</span> = 该业务新增</div>
+
+  <div class="card">
+    <table class="compact">
+      <thead>
+        <tr>
+          <th rowspan="2" style="vertical-align:bottom;">客户</th>
+          <th rowspan="2" style="vertical-align:bottom;">价格</th>
+          <th rowspan="2" style="vertical-align:bottom;">能源</th>
+          <th rowspan="2" style="vertical-align:bottom;">属性</th>
+          <th colspan="4" class="center" style="border-bottom:1px solid var(--g300);">26Q1 在投</th>
+          <th colspan="4" class="center" style="border-bottom:1px solid var(--g300);">26Q2 在投</th>
+          <th rowspan="2" class="center" style="vertical-align:bottom;">变化</th>
+        </tr>
+        <tr>
+          <th class="center">品牌</th><th class="center">聚星</th><th class="center">车型</th><th class="center">阵地</th>
+          <th class="center">品牌</th><th class="center">聚星</th><th class="center">车型</th><th class="center">阵地</th>
+        </tr>
+      </thead>
+      <tbody id="client-table-body"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ============== 七、汇报结论 ============== -->
+<div class="section">
+  <div class="section-eyebrow">PART 07 · 汇报结论</div>
+  <h2 class="h1">4 个核心信号 + 5 个 Q3 建议（基于 final 数据）</h2>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title" style="margin-bottom:14px;">本季 4 个核心信号</div>
+      <div style="font-size:13px;color:var(--g700);line-height:1.9;">
+        <p><b>① 投放盘 100% 留存 + 1 家激活</b><br>43 家在投客户无流失，极氪汽车从零投放激活为开投（阵地起步），盘面健康。<b>但仍有 25 家持续零投放</b>，是 Q3 拓展机会。</p>
+        <div class="divider"></div>
+        <p><b>② 品牌业务断崖下跌（本季最严重）</b><br>品牌业务渗透率 <span class="hl-dec">-5.8pp</span> 是 4 条业务线最大跌幅，超过聚星 -2.9pp。<b>流失 5 家 vs 仅新增 1 家</b>，承接力严重不足。</p>
+        <div class="divider"></div>
+        <p><b>③ 出现 2 家 -2 重创客户</b><br><span class="hl-dec">比亚迪（4→2）</span>从全渗透坠落到 2 条；<span class="hl-dec">上汽通用五菱（3→1）</span>仅剩阵地。两家都是品牌+聚星双失。</p>
+        <div class="divider"></div>
+        <p><b>④ 合资品牌持续承压、自主停滞</b><br>合资 -0.10（品牌业务-4家），自主 ±0.00（不再增长）。<b>合资客户向车型效果业务迁移</b>，但整体深度全面收缩。</p>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title" style="margin-bottom:14px;">Q3 建议动作</div>
+      <div style="font-size:13px;color:var(--g700);line-height:1.9;">
+        <p><b>① 品牌业务紧急回追 5 家流失客户</b><br>对接 <span class="hl-dec">上汽大众、上汽通用五菱、东风日产、比亚迪、起亚汽车</span>，了解品牌业务停投原因。<b>比亚迪从全渗透坠落必须高优解决</b>。</p>
+        <div class="divider"></div>
+        <p><b>② 守住 2 家 -2 重创客户</b><br>比亚迪和上汽通用五菱都从 3-4 条业务塌陷至 1-2 条，需 Q3 立即对接，避免进一步流失。</p>
+        <div class="divider"></div>
+        <p><b>③ 聚星业务回追 5 家流失客户</b><br>一汽红旗、上汽通用五菱、北汽集团、广汽丰田、比亚迪，留存率仅 37.5%。</p>
+        <div class="divider"></div>
+        <p><b>④ 复制车型效果留存 90.9% 的成功打法</b><br>车型效果是本季唯一健康业务，可拆解其承接合资品牌的成功模式，反向赋能品牌业务承接流失的合资客户。</p>
+        <div class="divider"></div>
+        <p><b>⑤ 推动极氪 + 开发 25 家零投放客户</b><br>极氪 Q2 仅在阵地业务起步，建议引导其向其他业务渗透；25 家持续零投放（含 BBA / 特斯拉 / 理想等）筛选 5-10 家重点突破。</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============== FOOTER ============== -->
+<footer>
+  <div>数据来源：客户业务线渗透情况_final.xlsx（2026-Q1明细 & 2026-Q2明细 sheet · 全量 69 家分母）  ·  分析维度：4 业务线 + 3 切片维度</div>
+  <div>磁力番薯 出品  ·  2026-06-23</div>
+</footer>
+
+</div>
+
+<script>
+const FF = '"Inter",-apple-system,"PingFang SC",sans-serif';
+const INC = '#D95040';
+const DEC = '#2EAD5E';
+
+function base() {
+  return {
+    backgroundColor: 'transparent',
+    tooltip: {
+      trigger: 'axis',
+      backgroundColor: '#111827',
+      borderColor: 'transparent',
+      borderRadius: 4,
+      padding: [10,14],
+      textStyle: { color:'#F9FAFB', fontSize:12, fontFamily:FF }
+    },
+    legend: {
+      top: 0, right: 0,
+      textStyle: { fontSize:11, color:'#6B7280', fontFamily:FF },
+      icon: 'circle', itemWidth:6, itemHeight:6, itemGap:16
+    },
+    grid: { left:0, right:0, bottom:0, top:48, containLabel:true },
+    xAxis: {
+      type: 'category',
+      axisLine: { lineStyle:{ color:'#E5E7EB' } },
+      axisTick: { show:false },
+      axisLabel: { color:'#9CA3AF', fontSize:11, fontFamily:FF },
+      splitLine: { show:false }
+    },
+    yAxis: {
+      axisLine: { show:false },
+      axisTick: { show:false },
+      axisLabel: { color:'#9CA3AF', fontSize:11, fontFamily:FF },
+      splitLine: { lineStyle:{ color:'#F3F4F6' } }
+    }
+  };
+}
+
+// ========== 图1：业务线投放客户数对比 ==========
+const bizNames = ['品牌','聚星','车型效果','阵地'];
+const q1Cnt = [10, 8, 11, 43];
+const q2Cnt = [6, 6, 13, 44];
+echarts.init(document.getElementById('chart-biz-count')).setOption({
+  ...base(),
+  xAxis: { ...base().xAxis, data: bizNames },
+  yAxis: { ...base().yAxis, axisLabel: { ...base().yAxis.axisLabel, formatter:'{value}' } },
+  legend: { ...base().legend, data:['26Q1','26Q2'] },
+  series: [
+    {
+      name:'26Q1', type:'bar', data:q1Cnt,
+      itemStyle:{ color:'#B3D2EF', borderRadius:[2,2,0,0] },
+      barMaxWidth: 36,
+      label: { show:true, position:'top', fontSize:11, color:'#6B7280', formatter:'{c}' }
+    },
+    {
+      name:'26Q2', type:'bar',
+      data:q2Cnt.map((v,i)=>({
+        value:v,
+        itemStyle:{
+          color: v>q1Cnt[i] ? INC : (v<q1Cnt[i] ? DEC : '#3B7FF5'),
+          borderRadius:[2,2,0,0]
+        }
+      })),
+      barMaxWidth: 36,
+      label: {
+        show:true, position:'top', fontSize:11, fontWeight:600,
+        formatter:(p)=>{
+          const d = q2Cnt[p.dataIndex] - q1Cnt[p.dataIndex];
+          if (d===0) return p.value;
+          return p.value + (d>0?` (+${d})`:` (${d})`);
+        },
+        color:(p)=>{
+          const d = q2Cnt[p.dataIndex] - q1Cnt[p.dataIndex];
+          if (d>0) return INC; if (d<0) return DEC; return '#111827';
+        }
+      }
+    }
+  ]
+});
+
+// ========== 图2：业务线渗透率对比 ==========
+const q1Rate = [14.5, 11.6, 15.9, 62.3];
+const q2Rate = [8.7, 8.7, 18.8, 63.8];
+echarts.init(document.getElementById('chart-biz-rate')).setOption({
+  ...base(),
+  xAxis: { ...base().xAxis, data: bizNames },
+  yAxis: { ...base().yAxis, axisLabel: { ...base().yAxis.axisLabel, formatter:'{value}%' } },
+  legend: { ...base().legend, data:['26Q1','26Q2'] },
+  series: [
+    {
+      name:'26Q1', type:'bar', data:q1Rate,
+      itemStyle:{ color:'#B3D2EF', borderRadius:[2,2,0,0] },
+      barMaxWidth: 30
+    },
+    {
+      name:'26Q2', type:'bar',
+      data:q2Rate.map((v,i)=>({
+        value:v,
+        itemStyle:{
+          color: v>q1Rate[i] ? INC : (v<q1Rate[i] ? DEC : '#3B7FF5'),
+          borderRadius:[2,2,0,0]
+        }
+      })),
+      barMaxWidth: 30,
+      label: {
+        show:true, position:'top', fontSize:11, fontWeight:600,
+        formatter:(p)=>{
+          const d = q2Rate[p.dataIndex] - q1Rate[p.dataIndex];
+          const dStr = d>0?`+${d.toFixed(1)}pp` : (d<0?`${d.toFixed(1)}pp`:'±0pp');
+          return p.value.toFixed(1) + '% (' + dStr + ')';
+        },
+        color:(p)=>{
+          const d = q2Rate[p.dataIndex] - q1Rate[p.dataIndex];
+          if (d>0) return INC; if (d<0) return DEC; return '#111827';
+        }
+      }
+    }
+  ]
+});
+
+// ========== 图3：变化标签分布 ==========
+const tagData = [
+  {name:'无变化', value:53, color:'#9CA3AF'},
+  {name:'-品牌、-聚星', value:2, color:DEC},
+  {name:'-聚星', value:3, color:DEC},
+  {name:'+聚星', value:3, color:INC},
+  {name:'-品牌', value:2, color:DEC},
+  {name:'+车型效果', value:2, color:INC},
+  {name:'-车型效果', value:1, color:DEC},
+  {name:'+品牌', value:1, color:INC},
+  {name:'+阵地', value:1, color:INC},
+  {name:'-品牌、+车型效果', value:1, color:'#D97706'},
+];
+echarts.init(document.getElementById('chart-change-tags')).setOption({
+  ...base(),
+  tooltip: { ...base().tooltip, trigger:'item', formatter:'{b}: {c} 家 ({d}%)' },
+  xAxis: { show:false },
+  yAxis: { show:false },
+  series: [{
+    type: 'bar',
+    data: tagData.map(d => ({
+      value:d.value, name:d.name,
+      itemStyle:{ color:d.color, borderRadius:[2,2,0,0] }
+    })),
+    barMaxWidth: 40,
+    label: {
+      show:true, position:'top', fontSize:11, fontWeight:600,
+      formatter:'{c} 家',
+      color:'#111827'
+    }
+  }],
+  xAxis: { ...base().xAxis, data: tagData.map(d=>d.name),
+    axisLabel: { ...base().xAxis.axisLabel, interval:0, rotate:30, fontSize:10 }
+  },
+  yAxis: { ...base().yAxis, axisLabel:{ ...base().yAxis.axisLabel, formatter:'{value}' } },
+  grid:{ left:0, right:0, top:32, bottom:32, containLabel:true },
+  legend: { show:false }
+});
+
+// ========== 图4：覆盖业务数分布 ==========
+const distLabel = ['0 条（未投）','1 条','2 条','3 条','4 条（全渗透）'];
+const distQ1 = [26, 25, 8, 9, 1];
+const distQ2 = [25, 27, 10, 6, 1];
+echarts.init(document.getElementById('chart-distribution')).setOption({
+  ...base(),
+  xAxis: { ...base().xAxis, data: distLabel },
+  yAxis: { ...base().yAxis, axisLabel: { ...base().yAxis.axisLabel, formatter:'{value}' } },
+  legend: { ...base().legend, data:['26Q1','26Q2'] },
+  series: [
+    {
+      name:'26Q1', type:'bar', data:distQ1,
+      itemStyle:{ color:'#B3D2EF', borderRadius:[2,2,0,0] },
+      barMaxWidth: 48,
+      label: { show:true, position:'top', fontSize:11, color:'#6B7280', formatter:'{c} 家' }
+    },
+    {
+      name:'26Q2', type:'bar',
+      data:distQ2.map((v,i)=>({
+        value:v,
+        itemStyle:{
+          color: v>distQ1[i] ? INC : (v<distQ1[i] ? DEC : '#3B7FF5'),
+          borderRadius:[2,2,0,0]
+        }
+      })),
+      barMaxWidth: 48,
+      label: {
+        show:true, position:'top', fontSize:11, fontWeight:600,
+        formatter:(p)=>{
+          const d = distQ2[p.dataIndex] - distQ1[p.dataIndex];
+          if (d===0) return p.value + ' 家';
+          return p.value + ' 家 ' + (d>0?`(+${d})`:`(${d})`);
+        },
+        color:(p)=>{
+          const d = distQ2[p.dataIndex] - distQ1[p.dataIndex];
+          if (d>0) return INC; if (d<0) return DEC; return '#111827';
+        }
+      }
+    }
+  ]
+});
+
+// ========== 客户全景表（69 家） ==========
+const tbody = document.getElementById('client-table-body');
+const xhrPath = "/data_agent/users/sessions/6686487/outputs/generated/analysis_v3.json";
+
+// 直接读 detail 数据，注入到页面
+const clientDataV3 = window.__CLIENT_DATA__ || [];
+
+function ind(v) { return `<span class="cell-ind ${v?'cell-1':'cell-0'}">${v?'●':'○'}</span>`; }
+function cellH(q1v, q2v) {
+  if (q1v === q2v) return ind(q2v);
+  if (q1v === 0 && q2v === 1) return `<span class="cell-ind" style="background:#FEE2E2;color:#B91C1C;" title="该业务新增">●</span>`;
+  if (q1v === 1 && q2v === 0) return `<span class="cell-ind" style="background:#DCFCE7;color:#166534;" title="该业务流失">○</span>`;
+  return ind(q2v);
+}
+function deltaTag(v) {
+  if (v > 0) return `<span class="tag-inc">+${v}</span>`;
+  if (v < 0) return `<span class="tag-dec">${v}</span>`;
+  return `<span class="tag-flat">±0</span>`;
+}
+
+function renderTable(records) {
+  let html = '';
+  // 分组：提升 / 不变（含零投放） / 下降
+  const groups = [
+    {key:'up', name:'覆盖提升', filter:r=>r['Δ']>0, color:INC},
+    {key:'flat_active', name:'覆盖不变（有投放）', filter:r=>r['Δ']===0 && r['Q2 业务覆盖数']>0, color:'#6B7280'},
+    {key:'zero', name:'持续零投放（Q3 拓展候选池）', filter:r=>r['Q1 业务覆盖数']===0 && r['Q2 业务覆盖数']===0, color:'#9CA3AF'},
+    {key:'down', name:'覆盖下降', filter:r=>r['Δ']<0, color:DEC},
+  ];
+  groups.forEach(g => {
+    const items = records.filter(g.filter);
+    if (items.length === 0) return;
+    html += `<tr><td colspan="13" style="background:#F9FAFB;font-size:11px;color:${g.color};font-weight:600;letter-spacing:0.04em;text-transform:uppercase;padding:8px 8px;">${g.name}（${items.length} 家）</td></tr>`;
+    items.forEach(r => {
+      let nameCell = r['集团名称'];
+      const q1b=r['Q1 品牌'], q1j=r['Q1 聚星'], q1c=r['Q1 车型效果'], q1z=r['Q1 阵地'];
+      const q2b=r['Q2 品牌'], q2j=r['Q2 聚星'], q2c=r['Q2 车型效果'], q2z=r['Q2 阵地'];
+      const q1total=r['Q1 业务覆盖数'], q2total=r['Q2 业务覆盖数'], delta=r['Δ'];
+      
+      if (r['集团名称'] === '极氪汽车') nameCell = `<b>${nameCell}</b><span class="badge new" style="margin-left:4px;font-size:10px;">激活</span>`;
+      else if (r['集团名称'] === '上汽通用五菱') nameCell = `<b>${nameCell}</b><span class="badge lost" style="margin-left:4px;font-size:10px;">-2 重创</span>`;
+      else if (q2total === 4) nameCell = `<b>${nameCell}</b><span class="badge inc" style="margin-left:4px;font-size:10px;">全渗透</span>`;
+      else if (q1total === 4 && delta < 0) nameCell = `<b>${nameCell}</b><span class="badge dec" style="margin-left:4px;font-size:10px;">回落</span>`;
+      else if (q1total === 0 && q2total === 0) nameCell = `${nameCell}<span class="badge idle" style="margin-left:4px;font-size:10px;">未开发</span>`;
+
+      let changeLabel = r['变化'] === '无变化' ? '<span class="tag-flat">无变化</span>' :
+                        (delta > 0 ? `<span class="tag-inc">${r['变化']}</span>` :
+                        (delta < 0 ? `<span class="tag-dec">${r['变化']}</span>` :
+                        `<span style="color:#D97706;font-weight:600;">${r['变化']}</span>`));
+      
+      html += `
+        <tr>
+          <td>${nameCell}</td>
+          <td>${r['产品价格带']}</td><td>${r['能源类型']}</td><td>${r['品牌属性']}</td>
+          <td class="center">${ind(q1b)}</td>
+          <td class="center">${ind(q1j)}</td>
+          <td class="center">${ind(q1c)}</td>
+          <td class="center">${ind(q1z)}</td>
+          <td class="center">${cellH(q1b, q2b)}</td>
+          <td class="center">${cellH(q1j, q2j)}</td>
+          <td class="center">${cellH(q1c, q2c)}</td>
+          <td class="center">${cellH(q1z, q2z)}</td>
+          <td class="center">${changeLabel}</td>
+        </tr>
+      `;
+    });
+  });
+  tbody.innerHTML = html;
+}
+
+// 数据在 data-injection script 中注入
+</script>
+<script id="data-injection">
+const __CLIENT_DATA_V3__ = [
+  {
+    "集团名称": "一汽大众",
+    "产品价格带": "10-20w",
+    "能源类型": "燃油",
+    "品牌属性": "合资",
+    "Q1 品牌": 1,
+    "Q2 品牌": 1,
+    "Q1 聚星": 0,
+    "Q2 聚星": 1,
+    "Q1 车型效果": 1,
+    "Q2 车型效果": 1,
+    "Q1 阵地": 1,
+    "Q2 阵地": 1,
+    "Q1 业务覆盖数": 3,
+    "Q2 业务覆盖数": 4,
+    "Δ": 1,
+    "变化": "+聚星"
+  },
+  {
+    "集团名称": "长安汽车",
+    "产品价格带": "10-20w",
+    "能源类型": "燃油",
+    "品牌属性": "自主",
+    "Q1 品牌": 0,
+    "Q2 品牌": 1,
+    "Q1 聚星": 0,
+    "Q2 聚星": 0,
+    "Q1 车型效果": 1,
+    "Q2 车型效果": 1,
+    "Q1 阵地": 1,
+    "Q2 阵地": 1,
+    "Q1 业务覆盖数": 2,
+    "Q2 业务覆盖数": 3,
+    "Δ": 1,
+    "变化": "+品牌"
+  },
+  {
+    "集团名称": "零跑汽车",
+    "产品价格带": "10-20w",
+    "能源类型": "新能源",
+    "品牌属性": "自主",
+    "Q1 品牌": 1,
+    "Q2 品牌": 1,
+    "Q1 聚星": 0,
+    "Q2 聚星": 1,
+    "Q1 车型效果": 0,
+    "Q2 车型效果": 0,
+    "Q1 阵地": 1,
+    "Q2 阵地": 1,
+    "Q1 业务覆盖数": 2,
+    "Q2 业务覆盖数": 3,
+    "Δ": 1,
+    "变化": "+聚星"
+  },
+  {
+    "集团名称": "上汽名爵&荣威",
+    "产品价格带": "10-20w",
+    "能源类型": "燃油",
+    "品牌属性": "自主",
+    "Q1 品牌": 0,
+    "Q2 品牌": 0,
+    "Q1 聚星": 0,
+    "Q2 聚星": 1,
+    "Q1 车型效果": 0,
+    "Q2 车型效果": 0,
+    "Q1 阵地": 1,
+    "Q2 阵地": 1,
+    "Q1 业务覆盖数": 1,
+    "Q2 业务覆盖数": 2,
+    "Δ": 1,
+    "变化": "+聚星"
+  },
+  {
+    "集团名称": "北京现代",
+    "产品价格带": "10-20w",
+    "能源类型": "燃油",
+    "品牌属性": "合资",
+    "Q1 品牌": 0,
+    "Q2 品牌": 0,
+    "Q1 聚星": 0,
+    "Q2 聚星": 0,
+    "Q1 车型效果": 0,
+    "Q2 车型效果": 1,
+    "Q1 阵地": 1,
+    "Q2 阵地": 1,
+    "Q1 业务覆盖数": 1,
+    "Q2 业务覆盖数": 2,
+    "Δ": 1,
+    "变化": "+车型效果"
+  },
+  {
+    "集团名称": "长安马自达",
+    "产品价格带": "10-20w",
+    "能源类型": "燃油",
+    "品牌属性": "合资",
+    "Q1 品牌": 0,
+    "Q2 品牌": 0,
+    "Q1 聚星": 0,
+    "Q2 聚星": 0,
+    "Q1 车型效果": 0,
+    "Q2 车型效果": 1,
+    "Q1 阵地": 1,
+    "Q2 阵地": 1,
+    "Q1 业务覆盖数": 1,
+    "Q2 业务覆盖数": 2,
+    "Δ": 1,
+    "变化": "+车型效果"
+  },
+  {
+    "集团名称": "极氪汽车",
+    "产品价格带": "20w以上",
+    "能源类型": "新能源",
+    "品牌属性": "自主",
+    "Q1 品牌": 0,
+    "Q2 品牌": 0,
+    "Q1 聚星": 0,
+    "Q2 聚星": 0,
+    "Q1 车型效果": 0,
+    "Q2 车型效果": 0,
+    "Q1 阵地": 0,
+    "Q2 阵地": 1,
+    "Q1 业务覆盖数": 0,
+    "Q2 业务覆盖数": 1,
+    "Δ": 1,
+    "变化": "+阵地"
+  },
+  {
+    "集团名称": "一汽丰田",
+    "产品价格带": "10-20w",
+    "能源类型": "燃油",
+    "品牌属性": "合资",
+    "Q1 品牌": 1,
+    "Q2 品牌": 1,
+    "Q1 聚星": 0,
+    "Q2 聚星": 0,
+    "Q1 车型效果": 1,
+    "Q2 车型效果": 1,
+    "Q1 阵地": 1,
+    "Q2 阵地": 1,
+    "Q1 业务覆盖数": 3,
+    "Q2 业务覆盖数": 3,
+    "Δ": 0,
+    "变化": "无变化"
+  },
+  {
+    "集团名称": "一汽捷达",
+    "产品价格带": "10-20w",
+    "能源类型": "燃油",
+    "品牌属性": "合资",
+    "Q1 品牌": 1,
+    "Q2 品牌": 1,
+    "Q1 聚星": 1,
+    "Q2 聚星": 1,
+    "Q1 车型效果": 0,
+    "Q2 车型效果": 0,
+    "Q1 阵地": 1,
+    "Q2 阵地": 1,
+    "Q1 业务覆盖数": 3,
+    "Q2 业务覆盖数": 3,
+    "Δ": 0,
+    "变化": "无变化"
+  },
+  {
+    "集团名称": "上汽大众",
+    "产品价格带": "10-20w",
+    "能源类型": "燃油",
+    "品牌属性": "合资",
+    "Q1 品牌": 1,
+    "Q2 品牌": 0,
+    "Q1 聚星": 1,
+    "Q2 聚星": 1,
+    "Q1 车型效果": 0,
+    "Q2 车型效果": 1,
+    "Q1 阵地": 1,
+    "Q2 阵地": 1,
+    "Q1 业务覆盖数": 3,
+    "Q2 业务覆盖数": 3,
+    "Δ": 0,
+    "变化": "-品牌、+车型效果"
+  },
+  {
+    "集团名称": "吉利汽车",
+    "产品价格带": "10-20w",
+    "能源类型": "燃油",
+    "品牌属性": "自主",
+    "Q1 品牌": 0,
+    "Q2 品牌": 0,
+    "Q1 聚星": 1,
+    "Q2 聚星": 1,
+    "Q1 车型效果": 1,
+    "Q2 车型效果": 1,
+    "Q1 阵地": 1,
+    "Q2 阵地": 1,
+    "Q1 业务覆盖数": 3,
+    "Q2 业务覆盖数": 3,
+    "Δ": 0,
+    "变化": "无变化"
+  },
+  {
+    "集团名称": "方程豹汽车",
+    "产品价格带": "20w以上",
+    "能源类型": "新能源",
+    "品牌属性": "自主",
+    "Q1 品牌": 0,
+    "Q2 品牌": 0,
+    "Q1 聚星": 0,
+    "Q2 聚星": 0,
+    "Q1 车型效果": 1,
+    "Q2 车型效果": 1,
+    "Q1 阵地": 1,
+    "Q2 阵地": 1,
+    "Q1 业务覆盖数": 2,
+    "Q2 业务覆盖数": 2,
+    "Δ": 0,
+    "变化": "无变化"
+  },
+  {
+    "集团名称": "深蓝汽车",
+    "产品价格带": "10-20w",
+    "能源类型": "新能源",
+    "品牌属性": "自主",
+    "Q1 品牌": 0,
+    "Q2 品牌": 0,
+    "Q1 聚星": 0,
+    "Q2 聚星": 0,
+    "Q1 车型效果": 1,
+    "Q2 车型效果": 1,
+    "Q1 阵地": 1,
+    "Q2 阵地": 1,
+    "Q1 业务覆盖数": 2,
+    "Q2 业务覆盖数": 2,
+    "Δ": 0,
+    "变化": "无变化"
+  },
+  {
+    "集团名称": "长安凯程",
+    "产品价格带": "10w以下",
+    "能源类型": "燃油",
+    "品牌属性": "自主",
+    "Q1 品牌": 0,
+    "Q2 品牌": 0,
+    "Q1 聚星": 0,
+    "Q2 聚星": 0,
+    "Q1 车型效果": 1,
+    "Q2 车型效果": 1,
+    "Q1 阵地": 1,
+    "Q2 阵地": 1,
+    "Q1 业务覆盖数": 2,
+    "Q2 业务覆盖数": 2,
+    "Δ": 0,
+    "变化": "无变化"
+  },
+  {
+    "集团名称": "一汽奔腾",
+    "产品价格带": "10-20w",
+    "能源类型": "燃油",
+    "品牌属性": "自主",
+    "Q1 品牌": 0,
+    "Q2 品牌": 0,
+    "Q1 聚星": 0,
+    "Q2 聚星": 0,
+    "Q1 车型效果": 0,
+    "Q2 车型效果": 0,
+    "Q1 阵地": 1,
+    "Q2 阵地": 1,
+    "Q1 业务覆盖数": 1,
+    "Q2 业务覆盖数": 1,
+    "Δ": 0,
+    "变化": "无变化"
+  },
+  {
+    "集团名称": "一汽奥迪",
+    "产品价格带": "20w以上",
+    "能源类型": "燃油",
+    "品牌属性": "合资",
+    "Q1 品牌": 0,
+    "Q2 品牌": 0,
+    "Q1 聚星": 0,
+    "Q2 聚星": 0,
+    "Q1 车型效果": 0,
+    "Q2 车型效果": 0,
+    "Q1 阵地": 1,
+    "Q2 阵地": 1,
+    "Q1 业务覆盖数": 1,
+    "Q2 业务覆盖数": 1,
+    "Δ": 0,
+    "变化": "无变化"
+  },
+  {
+    "集团名称": "上汽大通",
+    "产品价格带": "10-20w",
+    "能源类型": "燃油",
+    "品牌属性": "自主",
+    "Q1 品牌": 0,
+    "Q2 品牌": 0,
+    "Q1 聚星": 0,
+    "Q2 聚星": 0,
+    "Q1 车型效果": 0,
+    "Q2 车型效果": 0,
+    "Q1 阵地": 1,
+    "Q2 阵地": 1,
+    "Q1 业务覆盖数": 1,
+    "Q2 业务覆盖数": 1,
+    "Δ": 0,
+    "变化": "无变化"
+  },
+  {
+    "集团名称": "东风启辰",
+    "产品价格带": "10-20w",
+    "能源类型": "燃油",
+    "品牌属性": "合资",
+    "Q1 品牌": 0,
+    "Q2 品牌": 0,
+    "Q1 聚星": 0,
+    "Q2 聚星": 0,
+    "Q1 车型效果": 0,
+    "Q2 车型效果": 0,
+    "Q1 阵地": 1,
+    "Q2 阵地": 1,
+    "Q1 业务覆盖数": 1,
+    "Q2 业务覆盖数": 1,
+    "Δ": 0,
+    "变化": "无变化"
+  },
+  {
+    "集团名称": "东风本田",
+    "产品价格带": "10-20w",
+    "能源类型": "燃油",
+    "品牌属性": "合资",
+    "Q1 品牌": 0,
+    "Q2 品牌": 0,
+    "Q1 聚星": 0,
+    "Q2 聚星": 0,
+    "Q1 车型效果": 0,
+    "Q2 车型效果": 0,
+    "Q1 阵地": 1,
+    "Q2 阵地": 1,
+    "Q1 业务覆盖数": 1,
+    "Q2 业务覆盖数": 1,
+    "Δ": 0,
+    "变化": "无变化"
+  },
+  {
+    "集团名称": "东风风神",
+    "产品价格带": "10-20w",
+    "能源类型": "燃油",
+    "品牌属性": "自主",
+    "Q1 品牌": 0,
+    "Q2 品牌": 0,
+    "Q1 聚星": 0,
+    "Q2 聚星": 0,
+    "Q1 车型效果": 0,
+    "Q2 车型效果": 0,
+    "Q1 阵地": 1,
+    "Q2 阵地": 1,
+    "Q1 业务覆盖数": 1,
+    "Q2 业务覆盖数": 1,
+    "Δ": 0,
+    "变化": "无变化"
+  },
+  {
+    "集团名称": "凯翼汽车",
+    "产品价格带": "10w以下",
+    "能源类型": "燃油",
+    "品牌属性": "自主",
+    "Q1 品牌": 0,
+    "Q2 品牌": 0,
+    "Q1 聚星": 0,
+    "Q2 聚星": 0,
+    "Q1 车型效果": 0,
+    "Q2 车型效果": 0,
+    "Q1 阵地": 1,
+    "Q2 阵地": 1,
+    "Q1 业务覆盖数": 1,
+    "Q2 业务覆盖数": 1,
+    "Δ": 0,
+    "变化": "无变化"
+  },
+  {
+    "集团名称": "奇瑞捷豹路虎",
+    "产品价格带": "20w以上",
+    "能源类型": "燃油",
+    "品牌属性": "合资",
+    "Q1 品牌": 0,
+    "Q2 品牌": 0,
+    "Q1 聚星": 0,
+    "Q2 聚星": 0,
+    "Q1 车型效果": 0,
+    "Q2 车型效果": 0,
+    "Q1 阵地": 1,
+    "Q2 阵地": 1,
+    "Q1 业务覆盖数": 1,
+    "Q2 业务覆盖数": 1,
+    "Δ": 0,
+    "变化": "无变化"
+  },
+  {
+    "集团名称": "奇瑞新能源",
+    "产品价格带": "10-20w",
+    "能源类型": "新能源",
+    "品牌属性": "自主",
+    "Q1 品牌": 0,
+    "Q2 品牌": 0,
+    "Q1 聚星": 0,
+    "Q2 聚星": 0,
+    "Q1 车型效果": 0,
+    "Q2 车型效果": 0,
+    "Q1 阵地": 1,
+    "Q2 阵地": 1,
+    "Q1 业务覆盖数": 1,
+    "Q2 业务覆盖数": 1,
+    "Δ": 0,
+    "变化": "无变化"
+  },
+  {
+    "集团名称": "奇瑞汽车",
+    "产品价格带": "10-20w",
+    "能源类型": "燃油",
+    "品牌属性": "自主",
+    "Q1 品牌": 0,
+    "Q2 品牌": 0,
+    "Q1 聚星": 0,
+    "Q2 聚星": 0,
+    "Q1 车型效果": 0,
+    "Q2 车型效果": 0,
+    "Q1 阵地": 1,
+    "Q2 阵地": 1,
+    "Q1 业务覆盖数": 1,
+    "Q2 业务覆盖数": 1,
+    "Δ": 0,
+    "变化": "无变化"
+  },
+  {
+    "集团名称": "岚图汽车",
+    "产品价格带": "20w以上",
+    "能源类型": "新能源",
+    "品牌属性": "自主",
+    "Q1 品牌": 0,
+    "Q2 品牌": 0,
+    "Q1 聚星": 0,
+    "Q2 聚星": 0,
+    "Q1 车型效果": 0,
+    "Q2 车型效果": 0,
+    "Q1 阵地": 1,
+    "Q2 阵地": 1,
+    "Q1 业务覆盖数": 1,
+    "Q2 业务覆盖数": 1,
+    "Δ": 0,
+    "变化": "无变化"
+  },
+  {
+    "集团名称": "广汽传祺",
+    "产品价格带": "10-20w",
+    "能源类型": "燃油",
+    "品牌属性": "自主",
+    "Q1 品牌": 0,
+    "Q2 品牌": 0,
+    "Q1 聚星": 0,
+    "Q2 聚星": 0,
+    "Q1 车型效果": 0,
+    "Q2 车型效果": 0,
+    "Q1 阵地": 1,
+    "Q2 阵地": 1,
+    "Q1 业务覆盖数": 1,
+    "Q2 业务覆盖数": 1,
+    "Δ": 0,
+    "变化": "无变化"
+  },
+  {
+    "集团名称": "广汽埃安",
+    "产品价格带": "10-20w",
+    "能源类型": "新能源",
+    "品牌属性": "自主",
+    "Q1 品牌": 0,
+    "Q2 品牌": 0,
+    "Q1 聚星": 0,
+    "Q2 聚星": 0,
+    "Q1 车型效果": 0,
+    "Q2 车型效果": 0,
+    "Q1 阵地": 1,
+    "Q2 阵地": 1,
+    "Q1 业务覆盖数": 1,
+    "Q2 业务覆盖数": 1,
+    "Δ": 0,
+    "变化": "无变化"
+  },
+  {
+    "集团名称": "广汽本田",
+    "产品价格带": "10-20w",
+    "能源类型": "燃油",
+    "品牌属性": "合资",
+    "Q1 品牌": 0,
+    "Q2 品牌": 0,
+    "Q1 聚星": 0,
+    "Q2 聚星": 0,
+    "Q1 车型效果": 0,
+    "Q2 车型效果": 0,
+    "Q1 阵地": 1,
+    "Q2 阵地": 1,
+    "Q1 业务覆盖数": 1,
+    "Q2 业务覆盖数": 1,
+    "Δ": 0,
+    "变化": "无变化"
+  },
+  {
+    "集团名称": "捷途汽车",
+    "产品价格带": "10-20w",
+    "能源类型": "新能源",
+    "品牌属性": "自主",
+    "Q1 品牌": 0,
+    "Q2 品牌": 0,
+    "Q1 聚星": 0,
+    "Q2 聚星": 0,
+    "Q1 车型效果": 0,
+    "Q2 车型效果": 0,
+    "Q1 阵地": 1,
+    "Q2 阵地": 1,
+    "Q1 业务覆盖数": 1,
+    "Q2 业务覆盖数": 1,
+    "Δ": 0,
+    "变化": "无变化"
+  },
+  {
+    "集团名称": "极狐",
+    "产品价格带": "10-20w",
+    "能源类型": "新能源",
+    "品牌属性": "自主",
+    "Q1 品牌": 0,
+    "Q2 品牌": 0,
+    "Q1 聚星": 0,
+    "Q2 聚星": 0,
+    "Q1 车型效果": 0,
+    "Q2 车型效果": 0,
+    "Q1 阵地": 1,
+    "Q2 阵地": 1,
+    "Q1 业务覆盖数": 1,
+    "Q2 业务覆盖数": 1,
+    "Δ": 0,
+    "变化": "无变化"
+  },
+  {
+    "集团名称": "江淮汽车",
+    "产品价格带": "10-20w",
+    "能源类型": "燃油",
+    "品牌属性": "自主",
+    "Q1 品牌": 0,
+    "Q2 品牌": 0,
+    "Q1 聚星": 0,
+    "Q2 聚星": 0,
+    "Q1 车型效果": 0,
+    "Q2 车型效果": 0,
+    "Q1 阵地": 1,
+    "Q2 阵地": 1,
+    "Q1 业务覆盖数": 1,
+    "Q2 业务覆盖数": 1,
+    "Δ": 0,
+    "变化": "无变化"
+  },
+  {
+    "集团名称": "腾势汽车",
+    "产品价格带": "20w以上",
+    "能源类型": "新能源",
+    "品牌属性": "自主",
+    "Q1 品牌": 0,
+    "Q2 品牌": 0,
+    "Q1 聚星": 0,
+    "Q2 聚星": 0,
+    "Q1 车型效果": 0,
+    "Q2 车型效果": 0,
+    "Q1 阵地": 1,
+    "Q2 阵地": 1,
+    "Q1 业务覆盖数": 1,
+    "Q2 业务覆盖数": 1,
+    "Δ": 0,
+    "变化": "无变化"
+  },
+  {
+    "集团名称": "长城汽车",
+    "产品价格带": "10-20w",
+    "能源类型": "燃油",
+    "品牌属性": "自主",
+    "Q1 品牌": 0,
+    "Q2 品牌": 0,
+    "Q1 聚星": 0,
+    "Q2 聚星": 0,
+    "Q1 车型效果": 0,
+    "Q2 车型效果": 0,
+    "Q1 阵地": 1,
+    "Q2 阵地": 1,
+    "Q1 业务覆盖数": 1,
+    "Q2 业务覆盖数": 1,
+    "Δ": 0,
+    "变化": "无变化"
+  },
+  {
+    "集团名称": "长安福特",
+    "产品价格带": "20w以上",
+    "能源类型": "燃油",
+    "品牌属性": "合资",
+    "Q1 品牌": 0,
+    "Q2 品牌": 0,
+    "Q1 聚星": 0,
+    "Q2 聚星": 0,
+    "Q1 车型效果": 0,
+    "Q2 车型效果": 0,
+    "Q1 阵地": 1,
+    "Q2 阵地": 1,
+    "Q1 业务覆盖数": 1,
+    "Q2 业务覆盖数": 1,
+    "Δ": 0,
+    "变化": "无变化"
+  },
+  {
+    "集团名称": "阿维塔",
+    "产品价格带": "20w以上",
+    "能源类型": "新能源",
+    "品牌属性": "自主",
+    "Q1 品牌": 0,
+    "Q2 品牌": 0,
+    "Q1 聚星": 0,
+    "Q2 聚星": 0,
+    "Q1 车型效果": 0,
+    "Q2 车型效果": 0,
+    "Q1 阵地": 1,
+    "Q2 阵地": 1,
+    "Q1 业务覆盖数": 1,
+    "Q2 业务覆盖数": 1,
+    "Δ": 0,
+    "变化": "无变化"
+  },
+  {
+    "集团名称": "领克汽车",
+    "产品价格带": "10-20w",
+    "能源类型": "新能源",
+    "品牌属性": "自主",
+    "Q1 品牌": 0,
+    "Q2 品牌": 0,
+    "Q1 聚星": 0,
+    "Q2 聚星": 0,
+    "Q1 车型效果": 0,
+    "Q2 车型效果": 0,
+    "Q1 阵地": 1,
+    "Q2 阵地": 1,
+    "Q1 业务覆盖数": 1,
+    "Q2 业务覆盖数": 1,
+    "Δ": 0,
+    "变化": "无变化"
+  },
+  {
+    "集团名称": "SMART",
+    "产品价格带": "10-20w",
+    "能源类型": "新能源",
+    "品牌属性": "合资",
+    "Q1 品牌": 0,
+    "Q2 品牌": 0,
+    "Q1 聚星": 0,
+    "Q2 聚星": 0,
+    "Q1 车型效果": 0,
+    "Q2 车型效果": 0,
+    "Q1 阵地": 0,
+    "Q2 阵地": 0,
+    "Q1 业务覆盖数": 0,
+    "Q2 业务覆盖数": 0,
+    "Δ": 0,
+    "变化": "无变化"
+  },
+  {
+    "集团名称": "东风柳州",
+    "产品价格带": "10-20w",
+    "能源类型": "燃油",
+    "品牌属性": "自主",
+    "Q1 品牌": 0,
+    "Q2 品牌": 0,
+    "Q1 聚星": 0,
+    "Q2 聚星": 0,
+    "Q1 车型效果": 0,
+    "Q2 车型效果": 0,
+    "Q1 阵地": 0,
+    "Q2 阵地": 0,
+    "Q1 业务覆盖数": 0,
+    "Q2 业务覆盖数": 0,
+    "Δ": 0,
+    "变化": "无变化"
+  },
+  {
+    "集团名称": "东风汽车",
+    "产品价格带": "10w以下",
+    "能源类型": "燃油",
+    "品牌属性": "自主",
+    "Q1 品牌": 0,
+    "Q2 品牌": 0,
+    "Q1 聚星": 0,
+    "Q2 聚星": 0,
+    "Q1 车型效果": 0,
+    "Q2 车型效果": 0,
+    "Q1 阵地": 0,
+    "Q2 阵地": 0,
+    "Q1 业务覆盖数": 0,
+    "Q2 业务覆盖数": 0,
+    "Δ": 0,
+    "变化": "无变化"
+  },
+  {
+    "集团名称": "东风纳米",
+    "产品价格带": "10-20w",
+    "能源类型": "新能源",
+    "品牌属性": "自主",
+    "Q1 品牌": 0,
+    "Q2 品牌": 0,
+    "Q1 聚星": 0,
+    "Q2 聚星": 0,
+    "Q1 车型效果": 0,
+    "Q2 车型效果": 0,
+    "Q1 阵地": 0,
+    "Q2 阵地": 0,
+    "Q1 业务覆盖数": 0,
+    "Q2 业务覆盖数": 0,
+    "Δ": 0,
+    "变化": "无变化"
+  },
+  {
+    "集团名称": "保时捷",
+    "产品价格带": "20w以上",
+    "能源类型": "燃油",
+    "品牌属性": "合资",
+    "Q1 品牌": 0,
+    "Q2 品牌": 0,
+    "Q1 聚星": 0,
+    "Q2 聚星": 0,
+    "Q1 车型效果": 0,
+    "Q2 车型效果": 0,
+    "Q1 阵地": 0,
+    "Q2 阵地": 0,
+    "Q1 业务覆盖数": 0,
+    "Q2 业务覆盖数": 0,
+    "Δ": 0,
+    "变化": "无变化"
+  },
+  {
+    "集团名称": "奔驰",
+    "产品价格带": "20w以上",
+    "能源类型": "燃油",
+    "品牌属性": "合资",
+    "Q1 品牌": 0,
+    "Q2 品牌": 0,
+    "Q1 聚星": 0,
+    "Q2 聚星": 0,
+    "Q1 车型效果": 0,
+    "Q2 车型效果": 0,
+    "Q1 阵地": 0,
+    "Q2 阵地": 0,
+    "Q1 业务覆盖数": 0,
+    "Q2 业务覆盖数": 0,
+    "Δ": 0,
+    "变化": "无变化"
+  },
+  {
+    "集团名称": "宝马",
+    "产品价格带": "20w以上",
+    "能源类型": "燃油",
+    "品牌属性": "合资",
+    "Q1 品牌": 0,
+    "Q2 品牌": 0,
+    "Q1 聚星": 0,
+    "Q2 聚星": 0,
+    "Q1 车型效果": 0,
+    "Q2 车型效果": 0,
+    "Q1 阵地": 0,
+    "Q2 阵地": 0,
+    "Q1 业务覆盖数": 0,
+    "Q2 业务覆盖数": 0,
+    "Δ": 0,
+    "变化": "无变化"
+  },
+  {
+    "集团名称": "小鹏汽车",
+    "产品价格带": "10-20w",
+    "能源类型": "新能源",
+    "品牌属性": "自主",
+    "Q1 品牌": 0,
+    "Q2 品牌": 0,
+    "Q1 聚星": 0,
+    "Q2 聚星": 0,
+    "Q1 车型效果": 0,
+    "Q2 车型效果": 0,
+    "Q1 阵地": 0,
+    "Q2 阵地": 0,
+    "Q1 业务覆盖数": 0,
+    "Q2 业务覆盖数": 0,
+    "Δ": 0,
+    "变化": "无变化"
+  },
+  {
+    "集团名称": "捷尼赛思",
+    "产品价格带": "20w以上",
+    "能源类型": "燃油",
+    "品牌属性": "合资",
+    "Q1 品牌": 0,
+    "Q2 品牌": 0,
+    "Q1 聚星": 0,
+    "Q2 聚星": 0,
+    "Q1 车型效果": 0,
+    "Q2 车型效果": 0,
+    "Q1 阵地": 0,
+    "Q2 阵地": 0,
+    "Q1 业务覆盖数": 0,
+    "Q2 业务覆盖数": 0,
+    "Δ": 0,
+    "变化": "无变化"
+  },
+  {
+    "集团名称": "智己汽车",
+    "产品价格带": "20w以上",
+    "能源类型": "新能源",
+    "品牌属性": "自主",
+    "Q1 品牌": 0,
+    "Q2 品牌": 0,
+    "Q1 聚星": 0,
+    "Q2 聚星": 0,
+    "Q1 车型效果": 0,
+    "Q2 车型效果": 0,
+    "Q1 阵地": 0,
+    "Q2 阵地": 0,
+    "Q1 业务覆盖数": 0,
+    "Q2 业务覆盖数": 0,
+    "Δ": 0,
+    "变化": "无变化"
+  },
+  {
+    "集团名称": "极星汽车",
+    "产品价格带": "20w以上",
+    "能源类型": "新能源",
+    "品牌属性": "合资",
+    "Q1 品牌": 0,
+    "Q2 品牌": 0,
+    "Q1 聚星": 0,
+    "Q2 聚星": 0,
+    "Q1 车型效果": 0,
+    "Q2 车型效果": 0,
+    "Q1 阵地": 0,
+    "Q2 阵地": 0,
+    "Q1 业务覆盖数": 0,
+    "Q2 业务覆盖数": 0,
+    "Δ": 0,
+    "变化": "无变化"
+  },
+  {
+    "集团名称": "极石汽车",
+    "产品价格带": "20w以上",
+    "能源类型": "新能源",
+    "品牌属性": "自主",
+    "Q1 品牌": 0,
+    "Q2 品牌": 0,
+    "Q1 聚星": 0,
+    "Q2 聚星": 0,
+    "Q1 车型效果": 0,
+    "Q2 车型效果": 0,
+    "Q1 阵地": 0,
+    "Q2 阵地": 0,
+    "Q1 业务覆盖数": 0,
+    "Q2 业务覆盖数": 0,
+    "Δ": 0,
+    "变化": "无变化"
+  },
+  {
+    "集团名称": "林肯",
+    "产品价格带": "20w以上",
+    "能源类型": "燃油",
+    "品牌属性": "合资",
+    "Q1 品牌": 0,
+    "Q2 品牌": 0,
+    "Q1 聚星": 0,
+    "Q2 聚星": 0,
+    "Q1 车型效果": 0,
+    "Q2 车型效果": 0,
+    "Q1 阵地": 0,
+    "Q2 阵地": 0,
+    "Q1 业务覆盖数": 0,
+    "Q2 业务覆盖数": 0,
+    "Δ": 0,
+    "变化": "无变化"
+  },
+  {
+    "集团名称": "江铃福特",
+    "产品价格带": "10-20w",
+    "能源类型": "燃油",
+    "品牌属性": "合资",
+    "Q1 品牌": 0,
+    "Q2 品牌": 0,
+    "Q1 聚星": 0,
+    "Q2 聚星": 0,
+    "Q1 车型效果": 0,
+    "Q2 车型效果": 0,
+    "Q1 阵地": 0,
+    "Q2 阵地": 0,
+    "Q1 业务覆盖数": 0,
+    "Q2 业务覆盖数": 0,
+    "Δ": 0,
+    "变化": "无变化"
+  },
+  {
+    "集团名称": "沃尔沃汽车",
+    "产品价格带": "20w以上",
+    "能源类型": "燃油",
+    "品牌属性": "合资",
+    "Q1 品牌": 0,
+    "Q2 品牌": 0,
+    "Q1 聚星": 0,
+    "Q2 聚星": 0,
+    "Q1 车型效果": 0,
+    "Q2 车型效果": 0,
+    "Q1 阵地": 0,
+    "Q2 阵地": 0,
+    "Q1 业务覆盖数": 0,
+    "Q2 业务覆盖数": 0,
+    "Δ": 0,
+    "变化": "无变化"
+  },
+  {
+    "集团名称": "特斯拉",
+    "产品价格带": "20w以上",
+    "能源类型": "新能源",
+    "品牌属性": "合资",
+    "Q1 品牌": 0,
+    "Q2 品牌": 0,
+    "Q1 聚星": 0,
+    "Q2 聚星": 0,
+    "Q1 车型效果": 0,
+    "Q2 车型效果": 0,
+    "Q1 阵地": 0,
+    "Q2 阵地": 0,
+    "Q1 业务覆盖数": 0,
+    "Q2 业务覆盖数": 0,
+    "Δ": 0,
+    "变化": "无变化"
+  },
+  {
+    "集团名称": "玛莎拉蒂",
+    "产品价格带": "20w以上",
+    "能源类型": "燃油",
+    "品牌属性": "合资",
+    "Q1 品牌": 0,
+    "Q2 品牌": 0,
+    "Q1 聚星": 0,
+    "Q2 聚星": 0,
+    "Q1 车型效果": 0,
+    "Q2 车型效果": 0,
+    "Q1 阵地": 0,
+    "Q2 阵地": 0,
+    "Q1 业务覆盖数": 0,
+    "Q2 业务覆盖数": 0,
+    "Δ": 0,
+    "变化": "无变化"
+  },
+  {
+    "集团名称": "理想汽车",
+    "产品价格带": "20w以上",
+    "能源类型": "新能源",
+    "品牌属性": "自主",
+    "Q1 品牌": 0,
+    "Q2 品牌": 0,
+    "Q1 聚星": 0,
+    "Q2 聚星": 0,
+    "Q1 车型效果": 0,
+    "Q2 车型效果": 0,
+    "Q1 阵地": 0,
+    "Q2 阵地": 0,
+    "Q1 业务覆盖数": 0,
+    "Q2 业务覆盖数": 0,
+    "Δ": 0,
+    "变化": "无变化"
+  },
+  {
+    "集团名称": "英菲尼迪",
+    "产品价格带": "20w以上",
+    "能源类型": "燃油",
+    "品牌属性": "合资",
+    "Q1 品牌": 0,
+    "Q2 品牌": 0,
+    "Q1 聚星": 0,
+    "Q2 聚星": 0,
+    "Q1 车型效果": 0,
+    "Q2 车型效果": 0,
+    "Q1 阵地": 0,
+    "Q2 阵地": 0,
+    "Q1 业务覆盖数": 0,
+    "Q2 业务覆盖数": 0,
+    "Δ": 0,
+    "变化": "无变化"
+  },
+  {
+    "集团名称": "蔚来汽车",
+    "产品价格带": "20w以上",
+    "能源类型": "新能源",
+    "品牌属性": "自主",
+    "Q1 品牌": 0,
+    "Q2 品牌": 0,
+    "Q1 聚星": 0,
+    "Q2 聚星": 0,
+    "Q1 车型效果": 0,
+    "Q2 车型效果": 0,
+    "Q1 阵地": 0,
+    "Q2 阵地": 0,
+    "Q1 业务覆盖数": 0,
+    "Q2 业务覆盖数": 0,
+    "Δ": 0,
+    "变化": "无变化"
+  },
+  {
+    "集团名称": "赛力斯",
+    "产品价格带": "10-20w",
+    "能源类型": "新能源",
+    "品牌属性": "自主",
+    "Q1 品牌": 0,
+    "Q2 品牌": 0,
+    "Q1 聚星": 0,
+    "Q2 聚星": 0,
+    "Q1 车型效果": 0,
+    "Q2 车型效果": 0,
+    "Q1 阵地": 0,
+    "Q2 阵地": 0,
+    "Q1 业务覆盖数": 0,
+    "Q2 业务覆盖数": 0,
+    "Δ": 0,
+    "变化": "无变化"
+  },
+  {
+    "集团名称": "赛力斯蓝电",
+    "产品价格带": "10-20w",
+    "能源类型": "新能源",
+    "品牌属性": "自主",
+    "Q1 品牌": 0,
+    "Q2 品牌": 0,
+    "Q1 聚星": 0,
+    "Q2 聚星": 0,
+    "Q1 车型效果": 0,
+    "Q2 车型效果": 0,
+    "Q1 阵地": 0,
+    "Q2 阵地": 0,
+    "Q1 业务覆盖数": 0,
+    "Q2 业务覆盖数": 0,
+    "Δ": 0,
+    "变化": "无变化"
+  },
+  {
+    "集团名称": "路特斯",
+    "产品价格带": "20w以上",
+    "能源类型": "新能源",
+    "品牌属性": "合资",
+    "Q1 品牌": 0,
+    "Q2 品牌": 0,
+    "Q1 聚星": 0,
+    "Q2 聚星": 0,
+    "Q1 车型效果": 0,
+    "Q2 车型效果": 0,
+    "Q1 阵地": 0,
+    "Q2 阵地": 0,
+    "Q1 业务覆盖数": 0,
+    "Q2 业务覆盖数": 0,
+    "Δ": 0,
+    "变化": "无变化"
+  },
+  {
+    "集团名称": "阿尔法罗密欧",
+    "产品价格带": "20w以上",
+    "能源类型": "燃油",
+    "品牌属性": "合资",
+    "Q1 品牌": 0,
+    "Q2 品牌": 0,
+    "Q1 聚星": 0,
+    "Q2 聚星": 0,
+    "Q1 车型效果": 0,
+    "Q2 车型效果": 0,
+    "Q1 阵地": 0,
+    "Q2 阵地": 0,
+    "Q1 业务覆盖数": 0,
+    "Q2 业务覆盖数": 0,
+    "Δ": 0,
+    "变化": "无变化"
+  },
+  {
+    "集团名称": "雷达汽车",
+    "产品价格带": "10-20w",
+    "能源类型": "新能源",
+    "品牌属性": "自主",
+    "Q1 品牌": 0,
+    "Q2 品牌": 0,
+    "Q1 聚星": 0,
+    "Q2 聚星": 0,
+    "Q1 车型效果": 0,
+    "Q2 车型效果": 0,
+    "Q1 阵地": 0,
+    "Q2 阵地": 0,
+    "Q1 业务覆盖数": 0,
+    "Q2 业务覆盖数": 0,
+    "Δ": 0,
+    "变化": "无变化"
+  },
+  {
+    "集团名称": "比亚迪",
+    "产品价格带": "10-20w",
+    "能源类型": "新能源",
+    "品牌属性": "自主",
+    "Q1 品牌": 1,
+    "Q2 品牌": 0,
+    "Q1 聚星": 1,
+    "Q2 聚星": 0,
+    "Q1 车型效果": 1,
+    "Q2 车型效果": 1,
+    "Q1 阵地": 1,
+    "Q2 阵地": 1,
+    "Q1 业务覆盖数": 4,
+    "Q2 业务覆盖数": 2,
+    "Δ": -2,
+    "变化": "-品牌、-聚星"
+  },
+  {
+    "集团名称": "上汽通用五菱",
+    "产品价格带": "10w以下",
+    "能源类型": "新能源",
+    "品牌属性": "合资",
+    "Q1 品牌": 1,
+    "Q2 品牌": 0,
+    "Q1 聚星": 1,
+    "Q2 聚星": 0,
+    "Q1 车型效果": 0,
+    "Q2 车型效果": 0,
+    "Q1 阵地": 1,
+    "Q2 阵地": 1,
+    "Q1 业务覆盖数": 3,
+    "Q2 业务覆盖数": 1,
+    "Δ": -2,
+    "变化": "-品牌、-聚星"
+  },
+  {
+    "集团名称": "东风日产",
+    "产品价格带": "10-20w",
+    "能源类型": "燃油",
+    "品牌属性": "合资",
+    "Q1 品牌": 1,
+    "Q2 品牌": 0,
+    "Q1 聚星": 0,
+    "Q2 聚星": 0,
+    "Q1 车型效果": 1,
+    "Q2 车型效果": 1,
+    "Q1 阵地": 1,
+    "Q2 阵地": 1,
+    "Q1 业务覆盖数": 3,
+    "Q2 业务覆盖数": 2,
+    "Δ": -1,
+    "变化": "-品牌"
+  },
+  {
+    "集团名称": "北汽集团",
+    "产品价格带": "10-20w",
+    "能源类型": "燃油",
+    "品牌属性": "自主",
+    "Q1 品牌": 1,
+    "Q2 品牌": 1,
+    "Q1 聚星": 1,
+    "Q2 聚星": 0,
+    "Q1 车型效果": 0,
+    "Q2 车型效果": 0,
+    "Q1 阵地": 1,
+    "Q2 阵地": 1,
+    "Q1 业务覆盖数": 3,
+    "Q2 业务覆盖数": 2,
+    "Δ": -1,
+    "变化": "-聚星"
+  },
+  {
+    "集团名称": "广汽丰田",
+    "产品价格带": "10-20w",
+    "能源类型": "燃油",
+    "品牌属性": "合资",
+    "Q1 品牌": 0,
+    "Q2 品牌": 0,
+    "Q1 聚星": 1,
+    "Q2 聚星": 0,
+    "Q1 车型效果": 1,
+    "Q2 车型效果": 1,
+    "Q1 阵地": 1,
+    "Q2 阵地": 1,
+    "Q1 业务覆盖数": 3,
+    "Q2 业务覆盖数": 2,
+    "Δ": -1,
+    "变化": "-聚星"
+  },
+  {
+    "集团名称": "一汽红旗",
+    "产品价格带": "20w以上",
+    "能源类型": "燃油",
+    "品牌属性": "自主",
+    "Q1 品牌": 0,
+    "Q2 品牌": 0,
+    "Q1 聚星": 1,
+    "Q2 聚星": 0,
+    "Q1 车型效果": 0,
+    "Q2 车型效果": 0,
+    "Q1 阵地": 1,
+    "Q2 阵地": 1,
+    "Q1 业务覆盖数": 2,
+    "Q2 业务覆盖数": 1,
+    "Δ": -1,
+    "变化": "-聚星"
+  },
+  {
+    "集团名称": "上汽通用",
+    "产品价格带": "10-20w",
+    "能源类型": "燃油",
+    "品牌属性": "合资",
+    "Q1 品牌": 0,
+    "Q2 品牌": 0,
+    "Q1 聚星": 0,
+    "Q2 聚星": 0,
+    "Q1 车型效果": 1,
+    "Q2 车型效果": 0,
+    "Q1 阵地": 1,
+    "Q2 阵地": 1,
+    "Q1 业务覆盖数": 2,
+    "Q2 业务覆盖数": 1,
+    "Δ": -1,
+    "变化": "-车型效果"
+  },
+  {
+    "集团名称": "起亚汽车",
+    "产品价格带": "10-20w",
+    "能源类型": "燃油",
+    "品牌属性": "合资",
+    "Q1 品牌": 1,
+    "Q2 品牌": 0,
+    "Q1 聚星": 0,
+    "Q2 聚星": 0,
+    "Q1 车型效果": 0,
+    "Q2 车型效果": 0,
+    "Q1 阵地": 1,
+    "Q2 阵地": 1,
+    "Q1 业务覆盖数": 2,
+    "Q2 业务覆盖数": 1,
+    "Δ": -1,
+    "变化": "-品牌"
+  }
+];
+renderTable(__CLIENT_DATA_V3__);
+</script>
+
+</body>
+</html>

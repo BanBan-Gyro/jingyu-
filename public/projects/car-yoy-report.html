@@ -1,0 +1,786 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>汽车业务中心 消耗同比分析报告</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Helvetica Neue", Arial, sans-serif;
+    background: #f0f2f5;
+    color: #1a1a2e;
+    font-size: 14px;
+  }
+
+  /* ======= HEADER ======= */
+  .header {
+    background: linear-gradient(135deg, #0f3460 0%, #16213e 60%, #1a1a2e 100%);
+    padding: 48px 60px 40px;
+    position: relative;
+    overflow: hidden;
+  }
+  .header::before {
+    content: '';
+    position: absolute;
+    top: -80px; right: -80px;
+    width: 300px; height: 300px;
+    border-radius: 50%;
+    background: rgba(229, 57, 53, 0.12);
+  }
+  .header::after {
+    content: '';
+    position: absolute;
+    bottom: -60px; left: 200px;
+    width: 200px; height: 200px;
+    border-radius: 50%;
+    background: rgba(30, 136, 229, 0.10);
+  }
+  .header-tag {
+    display: inline-block;
+    background: rgba(229, 57, 53, 0.2);
+    color: #ef9a9a;
+    border: 1px solid rgba(229, 57, 53, 0.4);
+    padding: 4px 14px;
+    border-radius: 20px;
+    font-size: 12px;
+    letter-spacing: 1px;
+    margin-bottom: 18px;
+  }
+  .header h1 {
+    color: #ffffff;
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    margin-bottom: 10px;
+  }
+  .header .subtitle {
+    color: rgba(255,255,255,0.55);
+    font-size: 13px;
+    line-height: 1.8;
+  }
+  .header .meta {
+    margin-top: 20px;
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+  }
+  .meta-item {
+    background: rgba(255,255,255,0.07);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 8px;
+    padding: 8px 16px;
+    color: rgba(255,255,255,0.75);
+    font-size: 12px;
+  }
+  .meta-item span { color: #fff; font-weight: 600; }
+
+  /* ======= LAYOUT ======= */
+  .container { max-width: 1100px; margin: 0 auto; padding: 32px 24px; }
+
+  /* ======= KPI CARDS ======= */
+  .kpi-row {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 28px;
+  }
+  .kpi-card {
+    background: #fff;
+    border-radius: 12px;
+    padding: 22px 20px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    border-top: 3px solid #e0e0e0;
+    position: relative;
+    overflow: hidden;
+  }
+  .kpi-card.red { border-top-color: #e53935; }
+  .kpi-card.green { border-top-color: #43a047; }
+  .kpi-card.blue { border-top-color: #1e88e5; }
+  .kpi-card.orange { border-top-color: #fb8c00; }
+  .kpi-label { font-size: 11px; color: #9e9e9e; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+  .kpi-value { font-size: 26px; font-weight: 700; color: #1a1a2e; line-height: 1; }
+  .kpi-value.negative { color: #e53935; }
+  .kpi-value.positive { color: #43a047; }
+  .kpi-sub { margin-top: 6px; font-size: 12px; color: #757575; }
+  .kpi-badge {
+    position: absolute; top: 16px; right: 16px;
+    font-size: 18px; opacity: 0.15;
+  }
+
+  /* ======= ALERT BOX ======= */
+  .alert-box {
+    background: linear-gradient(135deg, #fff5f5, #fff);
+    border: 1px solid #ffcdd2;
+    border-left: 4px solid #e53935;
+    border-radius: 10px;
+    padding: 18px 22px;
+    margin-bottom: 28px;
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+  }
+  .alert-icon { font-size: 22px; flex-shrink: 0; margin-top: 2px; }
+  .alert-title { font-size: 14px; font-weight: 700; color: #c62828; margin-bottom: 6px; }
+  .alert-text { font-size: 13px; color: #555; line-height: 1.7; }
+
+  /* ======= SECTION ======= */
+  .section { margin-bottom: 28px; }
+  .section-header {
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 16px;
+  }
+  .section-icon {
+    width: 32px; height: 32px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+  }
+  .section-icon.red { background: #ffebee; }
+  .section-icon.blue { background: #e3f2fd; }
+  .section-icon.green { background: #e8f5e9; }
+  .section-icon.orange { background: #fff3e0; }
+  .section-title { font-size: 16px; font-weight: 700; color: #1a1a2e; }
+  .section-desc { font-size: 12px; color: #9e9e9e; margin-top: 2px; }
+
+  /* ======= CARD ======= */
+  .card {
+    background: #fff;
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+  }
+
+  /* ======= CHART GRID ======= */
+  .chart-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-bottom: 28px;
+  }
+  .chart-card {
+    background: #fff;
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+  }
+  .chart-title { font-size: 13px; font-weight: 600; color: #424242; margin-bottom: 18px; }
+  .chart-wrap { position: relative; }
+
+  /* ======= BIZ TABLE ======= */
+  .biz-table { width: 100%; border-collapse: collapse; }
+  .biz-table th {
+    background: #f5f5f5;
+    font-size: 11px; color: #757575;
+    padding: 10px 14px; text-align: left;
+    font-weight: 600; letter-spacing: 0.3px;
+    border-bottom: 2px solid #e0e0e0;
+  }
+  .biz-table th.right, .biz-table td.right { text-align: right; }
+  .biz-table td {
+    padding: 12px 14px;
+    border-bottom: 1px solid #f0f0f0;
+    font-size: 13px;
+    color: #333;
+  }
+  .biz-table tr:last-child td { border-bottom: none; }
+  .biz-table tr:hover td { background: #fafafa; }
+  .tag {
+    display: inline-block;
+    padding: 2px 9px;
+    border-radius: 4px;
+    font-size: 11px; font-weight: 600;
+  }
+  .tag.down { background: #ffebee; color: #c62828; }
+  .tag.up { background: #e8f5e9; color: #2e7d32; }
+
+  /* ======= PROGRESS BAR ======= */
+  .progress-wrap { display: flex; align-items: center; gap: 8px; }
+  .progress-bg {
+    flex: 1; height: 6px; background: #f0f0f0;
+    border-radius: 3px; overflow: hidden;
+  }
+  .progress-bar { height: 100%; border-radius: 3px; }
+  .progress-bar.neg { background: linear-gradient(90deg, #e53935, #ef9a9a); }
+  .progress-bar.pos { background: linear-gradient(90deg, #43a047, #a5d6a7); }
+  .progress-pct { font-size: 11px; color: #757575; min-width: 42px; text-align: right; }
+
+  /* ======= GROUP TABLE ======= */
+  .group-list { display: flex; flex-direction: column; gap: 10px; }
+  .group-item {
+    display: grid;
+    grid-template-columns: 24px 1fr auto;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    background: #fafafa;
+    border-radius: 10px;
+    border: 1px solid #f0f0f0;
+    transition: all 0.15s;
+  }
+  .group-item:hover { background: #f5f5f5; }
+  .group-rank {
+    width: 24px; height: 24px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-weight: 700; color: #fff;
+    flex-shrink: 0;
+  }
+  .rank-1 { background: #c62828; }
+  .rank-2 { background: #d32f2f; }
+  .rank-3 { background: #e53935; }
+  .rank-other { background: #bdbdbd; }
+  .group-name { font-size: 13px; font-weight: 600; color: #212121; }
+  .group-biz { font-size: 11px; color: #9e9e9e; margin-top: 2px; }
+  .group-right { text-align: right; }
+  .group-value { font-size: 14px; font-weight: 700; color: #e53935; }
+  .group-pct { font-size: 11px; color: #9e9e9e; margin-top: 2px; }
+
+  /* ======= GROWTH CARDS ======= */
+  .growth-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+  }
+  .growth-card {
+    background: #fff;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    border-top: 3px solid #43a047;
+    text-align: center;
+  }
+  .growth-name { font-size: 13px; font-weight: 700; color: #1a1a2e; margin-bottom: 10px; }
+  .growth-val { font-size: 22px; font-weight: 800; color: #43a047; }
+  .growth-pct { font-size: 13px; color: #66bb6a; margin-top: 4px; }
+  .growth-base { font-size: 11px; color: #9e9e9e; margin-top: 6px; }
+
+  /* ======= SUGGESTION ======= */
+  .suggest-list { display: flex; flex-direction: column; gap: 12px; }
+  .suggest-item {
+    display: flex; gap: 14px; align-items: flex-start;
+    padding: 16px 18px;
+    background: #fafafa;
+    border-radius: 10px;
+    border: 1px solid #f0f0f0;
+  }
+  .suggest-num {
+    width: 28px; height: 28px;
+    border-radius: 8px;
+    background: linear-gradient(135deg, #0f3460, #1e88e5);
+    color: #fff; font-size: 13px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+  }
+  .suggest-content { flex: 1; }
+  .suggest-title { font-size: 13px; font-weight: 700; color: #1a1a2e; margin-bottom: 4px; }
+  .suggest-desc { font-size: 12px; color: #666; line-height: 1.7; }
+
+  /* ======= FOOTER ======= */
+  .footer {
+    text-align: center;
+    padding: 24px;
+    font-size: 11px; color: #bdbdbd;
+    border-top: 1px solid #e0e0e0;
+    margin-top: 8px;
+  }
+
+  /* ======= TWO-COL ======= */
+  .two-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+    margin-bottom: 28px;
+  }
+
+  @media (max-width: 768px) {
+    .kpi-row { grid-template-columns: repeat(2, 1fr); }
+    .chart-grid, .two-col { grid-template-columns: 1fr; }
+    .growth-row { grid-template-columns: 1fr; }
+    .header { padding: 32px 24px 28px; }
+    .header h1 { font-size: 20px; }
+    .container { padding: 20px 16px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="header-tag">内部报告 · 机密</div>
+  <h1>汽车业务中心 · 消耗同比分析报告</h1>
+  <div class="subtitle">
+    数据范围：直客销售责任人二级部门 = 汽车业务中心<br>
+    本期：2026/04/01 - 2026/05/27 &nbsp;vs&nbsp; 基期：2025/04/01 - 2025/05/27
+  </div>
+  <div class="meta">
+    <div class="meta-item">报告日期：<span>2026-05-28</span></div>
+    <div class="meta-item">数据截至：<span>2026-05-27</span></div>
+    <div class="meta-item">对比类型：<span>同比 (YoY)</span></div>
+    <div class="meta-item">出品：<span>磁力番薯 · DataAgent</span></div>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- ALERT -->
+  <div class="alert-box">
+    <div class="alert-icon">&#9888;</div>
+    <div>
+      <div class="alert-title">核心结论：总消耗同比下滑 -17.5%，主要跌在「阵地-官号」「统签统付经销商」「品牌」三条业务线</div>
+      <div class="alert-text">
+        三线合计贡献 <strong>94.7%</strong> 的跌幅，下跌共 -2,694万元。其中多家集团本期投放完全归零（一汽红旗、东风日产、吉利汽车等），是本轮下跌的核心风险。仅有「车型效果」「聚星」「二手车」保持正增长，但增量不足以对冲。
+      </div>
+    </div>
+  </div>
+
+  <!-- KPI CARDS -->
+  <div class="kpi-row">
+    <div class="kpi-card red">
+      <div class="kpi-badge">&#8595;</div>
+      <div class="kpi-label">总消耗变化</div>
+      <div class="kpi-value negative">-2,842万</div>
+      <div class="kpi-sub">本期 13,376万 / 基期 16,219万</div>
+    </div>
+    <div class="kpi-card red">
+      <div class="kpi-badge">%</div>
+      <div class="kpi-label">同比增速</div>
+      <div class="kpi-value negative">-17.5%</div>
+      <div class="kpi-sub">同比下滑</div>
+    </div>
+    <div class="kpi-card orange">
+      <div class="kpi-badge">&#128197;</div>
+      <div class="kpi-label">下跌业务线</div>
+      <div class="kpi-value" style="color:#fb8c00">4 条</div>
+      <div class="kpi-sub">共7条业务线中</div>
+    </div>
+    <div class="kpi-card green">
+      <div class="kpi-badge">&#8593;</div>
+      <div class="kpi-label">增长业务线</div>
+      <div class="kpi-value positive">3 条</div>
+      <div class="kpi-sub">车型效果 / 聚星 / 二手车</div>
+    </div>
+  </div>
+
+  <!-- CHART ROW -->
+  <div class="chart-grid">
+    <div class="chart-card">
+      <div class="chart-title">各业务线 消耗对比（万元）</div>
+      <div class="chart-wrap" style="height:280px">
+        <canvas id="bizBarChart"></canvas>
+      </div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">本期消耗结构占比</div>
+      <div class="chart-wrap" style="height:280px">
+        <canvas id="pieChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- BIZ LINE TABLE -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-icon red">&#128202;</div>
+      <div>
+        <div class="section-title">维度一：业务类型细拆 — 对比明细</div>
+        <div class="section-desc">贡献度 = 该业务线变化值 / 总变化绝对值</div>
+      </div>
+    </div>
+    <div class="card">
+      <table class="biz-table">
+        <thead>
+          <tr>
+            <th>业务类型</th>
+            <th class="right">基期消耗(万)</th>
+            <th class="right">本期消耗(万)</th>
+            <th class="right">变化值(万)</th>
+            <th class="right">同比</th>
+            <th>贡献度</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><strong>阵地-官号</strong></td>
+            <td class="right">3,793</td>
+            <td class="right">2,641</td>
+            <td class="right" style="color:#e53935;font-weight:700">-1,152</td>
+            <td class="right"><span class="tag down">-30.4%</span></td>
+            <td>
+              <div class="progress-wrap">
+                <div class="progress-bg"><div class="progress-bar neg" style="width:80%"></div></div>
+                <span class="progress-pct" style="color:#e53935">-40.5%</span>
+              </div>
+            </td>
+            <td></td>
+          </tr>
+          <tr>
+            <td><strong>统签统付经销商</strong></td>
+            <td class="right">1,761</td>
+            <td class="right">898</td>
+            <td class="right" style="color:#e53935;font-weight:700">-862</td>
+            <td class="right"><span class="tag down">-49.0%</span></td>
+            <td>
+              <div class="progress-wrap">
+                <div class="progress-bg"><div class="progress-bar neg" style="width:60%"></div></div>
+                <span class="progress-pct" style="color:#e53935">-30.3%</span>
+              </div>
+            </td>
+            <td></td>
+          </tr>
+          <tr>
+            <td><strong>品牌</strong></td>
+            <td class="right">1,608</td>
+            <td class="right">929</td>
+            <td class="right" style="color:#e53935;font-weight:700">-679</td>
+            <td class="right"><span class="tag down">-42.2%</span></td>
+            <td>
+              <div class="progress-wrap">
+                <div class="progress-bg"><div class="progress-bar neg" style="width:47%"></div></div>
+                <span class="progress-pct" style="color:#e53935">-23.9%</span>
+              </div>
+            </td>
+            <td></td>
+          </tr>
+          <tr>
+            <td>统签单付经销商</td>
+            <td class="right">7,363</td>
+            <td class="right">6,878</td>
+            <td class="right" style="color:#e53935;font-weight:700">-485</td>
+            <td class="right"><span class="tag down">-6.6%</span></td>
+            <td>
+              <div class="progress-wrap">
+                <div class="progress-bg"><div class="progress-bar neg" style="width:34%"></div></div>
+                <span class="progress-pct" style="color:#e53935">-17.1%</span>
+              </div>
+            </td>
+            <td></td>
+          </tr>
+          <tr>
+            <td>车型效果</td>
+            <td class="right">1,276</td>
+            <td class="right">1,519</td>
+            <td class="right" style="color:#43a047;font-weight:700">+243</td>
+            <td class="right"><span class="tag up">+19.0%</span></td>
+            <td>
+              <div class="progress-wrap">
+                <div class="progress-bg"><div class="progress-bar pos" style="width:17%"></div></div>
+                <span class="progress-pct" style="color:#43a047">+8.5%</span>
+              </div>
+            </td>
+            <td></td>
+          </tr>
+          <tr>
+            <td>聚星</td>
+            <td class="right">332</td>
+            <td class="right">413</td>
+            <td class="right" style="color:#43a047;font-weight:700">+81</td>
+            <td class="right"><span class="tag up">+24.5%</span></td>
+            <td>
+              <div class="progress-wrap">
+                <div class="progress-bg"><div class="progress-bar pos" style="width:6%"></div></div>
+                <span class="progress-pct" style="color:#43a047">+2.9%</span>
+              </div>
+            </td>
+            <td></td>
+          </tr>
+          <tr>
+            <td>二手车</td>
+            <td class="right">86</td>
+            <td class="right">98</td>
+            <td class="right" style="color:#43a047;font-weight:700">+12</td>
+            <td class="right"><span class="tag up">+14.1%</span></td>
+            <td>
+              <div class="progress-wrap">
+                <div class="progress-bg"><div class="progress-bar pos" style="width:1%"></div></div>
+                <span class="progress-pct" style="color:#43a047">+0.4%</span>
+              </div>
+            </td>
+            <td></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- GROUP DROP TOP10 -->
+  <div class="two-col">
+    <!-- LEFT: 降幅TOP10 -->
+    <div>
+      <div class="section-header">
+        <div class="section-icon red">&#128273;</div>
+        <div>
+          <div class="section-title">维度二：业务×集团 — 降幅 TOP10</div>
+          <div class="section-desc">单一业务线 × 集团维度的最大跌幅</div>
+        </div>
+      </div>
+      <div class="group-list">
+        <div class="group-item">
+          <div class="group-rank rank-1">1</div>
+          <div><div class="group-name">捷途汽车</div><div class="group-biz">阵地-官号</div></div>
+          <div class="group-right"><div class="group-value">-680万</div><div class="group-pct">-50.1% &nbsp;&#9660;</div></div>
+        </div>
+        <div class="group-item">
+          <div class="group-rank rank-2">2</div>
+          <div><div class="group-name">一汽红旗</div><div class="group-biz">品牌（本期归零）</div></div>
+          <div class="group-right"><div class="group-value">-474万</div><div class="group-pct">-100.0% &nbsp;&#9660;</div></div>
+        </div>
+        <div class="group-item">
+          <div class="group-rank rank-3">3</div>
+          <div><div class="group-name">东风日产</div><div class="group-biz">品牌（本期归零）</div></div>
+          <div class="group-right"><div class="group-value">-366万</div><div class="group-pct">-100.0% &nbsp;&#9660;</div></div>
+        </div>
+        <div class="group-item">
+          <div class="group-rank rank-other">4</div>
+          <div><div class="group-name">长安引力经销商</div><div class="group-biz">统签单付经销商</div></div>
+          <div class="group-right"><div class="group-value">-343万</div><div class="group-pct">-49.7% &nbsp;&#9660;</div></div>
+        </div>
+        <div class="group-item">
+          <div class="group-rank rank-other">5</div>
+          <div><div class="group-name">奇瑞汽车</div><div class="group-biz">阵地-官号</div></div>
+          <div class="group-right"><div class="group-value">-317万</div><div class="group-pct">-94.4% &nbsp;&#9660;</div></div>
+        </div>
+        <div class="group-item">
+          <div class="group-rank rank-other">6</div>
+          <div><div class="group-name">东风日产</div><div class="group-biz">车型效果</div></div>
+          <div class="group-right"><div class="group-value">-274万</div><div class="group-pct">-78.5% &nbsp;&#9660;</div></div>
+        </div>
+        <div class="group-item">
+          <div class="group-rank rank-other">7</div>
+          <div><div class="group-name">星途经销商</div><div class="group-biz">统签单付经销商</div></div>
+          <div class="group-right"><div class="group-value">-239万</div><div class="group-pct">-90.2% &nbsp;&#9660;</div></div>
+        </div>
+        <div class="group-item">
+          <div class="group-rank rank-other">8</div>
+          <div><div class="group-name">长安引力</div><div class="group-biz">阵地-官号</div></div>
+          <div class="group-right"><div class="group-value">-232万</div><div class="group-pct">-39.1% &nbsp;&#9660;</div></div>
+        </div>
+        <div class="group-item">
+          <div class="group-rank rank-other">9</div>
+          <div><div class="group-name">一汽丰田</div><div class="group-biz">统签统付经销商</div></div>
+          <div class="group-right"><div class="group-value">-228万</div><div class="group-pct">-93.9% &nbsp;&#9660;</div></div>
+        </div>
+        <div class="group-item">
+          <div class="group-rank rank-other">10</div>
+          <div><div class="group-name">比亚迪王朝</div><div class="group-biz">车型效果</div></div>
+          <div class="group-right"><div class="group-value">-222万</div><div class="group-pct">-65.5% &nbsp;&#9660;</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: 品牌线归零 + 统签统付归零 -->
+    <div>
+      <div class="section-header">
+        <div class="section-icon orange">&#128680;</div>
+        <div>
+          <div class="section-title">重点风险：集团本期投放完全归零</div>
+          <div class="section-desc">基期有消耗、本期降为 0 的集团</div>
+        </div>
+      </div>
+      <div class="card" style="padding:18px 20px">
+        <div style="font-size:12px;font-weight:700;color:#c62828;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid #ffcdd2;">
+          &#9632; 品牌业务线（9家归零）
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px;">
+          <span style="background:#fff5f5;border:1px solid #ffcdd2;color:#c62828;padding:4px 10px;border-radius:6px;font-size:12px;">一汽红旗 <strong>-474万</strong></span>
+          <span style="background:#fff5f5;border:1px solid #ffcdd2;color:#c62828;padding:4px 10px;border-radius:6px;font-size:12px;">东风日产 <strong>-366万</strong></span>
+          <span style="background:#fff5f5;border:1px solid #ffcdd2;color:#c62828;padding:4px 10px;border-radius:6px;font-size:12px;">上汽大众 <strong>-139万</strong></span>
+          <span style="background:#fff5f5;border:1px solid #ffcdd2;color:#c62828;padding:4px 10px;border-radius:6px;font-size:12px;">一汽奔腾 <strong>-99万</strong></span>
+          <span style="background:#fff5f5;border:1px solid #ffcdd2;color:#c62828;padding:4px 10px;border-radius:6px;font-size:12px;">长安启源 <strong>-84万</strong></span>
+          <span style="background:#fff5f5;border:1px solid #ffcdd2;color:#c62828;padding:4px 10px;border-radius:6px;font-size:12px;">起亚汽车 <strong>-57万</strong></span>
+          <span style="background:#fff5f5;border:1px solid #ffcdd2;color:#c62828;padding:4px 10px;border-radius:6px;font-size:12px;">长城汽车 <strong>-41万</strong></span>
+          <span style="background:#fff5f5;border:1px solid #ffcdd2;color:#c62828;padding:4px 10px;border-radius:6px;font-size:12px;">上汽通用五菱 <strong>-30万</strong></span>
+          <span style="background:#fff5f5;border:1px solid #ffcdd2;color:#c62828;padding:4px 10px;border-radius:6px;font-size:12px;">广汽传祺 <strong>-29万</strong></span>
+        </div>
+        <div style="font-size:12px;font-weight:700;color:#c62828;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid #ffcdd2;">
+          &#9632; 统签统付经销商（4家归零）
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:18px;">
+          <span style="background:#fff5f5;border:1px solid #ffcdd2;color:#c62828;padding:4px 10px;border-radius:6px;font-size:12px;">吉利汽车 <strong>-160万</strong></span>
+          <span style="background:#fff5f5;border:1px solid #ffcdd2;color:#c62828;padding:4px 10px;border-radius:6px;font-size:12px;">一汽奔腾 <strong>-90万</strong></span>
+          <span style="background:#fff5f5;border:1px solid #ffcdd2;color:#c62828;padding:4px 10px;border-radius:6px;font-size:12px;">长安引力 <strong>-43万</strong></span>
+          <span style="background:#fff5f5;border:1px solid #ffcdd2;color:#c62828;padding:4px 10px;border-radius:6px;font-size:12px;">东风柳州 <strong>-15万</strong></span>
+        </div>
+        <div style="font-size:12px;font-weight:700;color:#c62828;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid #ffcdd2;">
+          &#9632; 阵地-官号（部分归零）
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;">
+          <span style="background:#fff5f5;border:1px solid #ffcdd2;color:#c62828;padding:4px 10px;border-radius:6px;font-size:12px;">长安阿维塔 <strong>-174万</strong></span>
+          <span style="background:#fff5f5;border:1px solid #ffcdd2;color:#c62828;padding:4px 10px;border-radius:6px;font-size:12px;">长安深蓝 <strong>-20万</strong></span>
+          <span style="background:#fff5f5;border:1px solid #ffcdd2;color:#c62828;padding:4px 10px;border-radius:6px;font-size:12px;">长安福特 <strong>-18万</strong></span>
+          <span style="background:#fff5f5;border:1px solid #ffcdd2;color:#c62828;padding:4px 10px;border-radius:6px;font-size:12px;">特斯拉 <strong>-13万</strong></span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- GROWTH -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-icon green">&#128200;</div>
+      <div>
+        <div class="section-title">增长亮点</div>
+        <div class="section-desc">3条业务线保持正增长，可作为重点资源方向</div>
+      </div>
+    </div>
+    <div class="growth-row">
+      <div class="growth-card">
+        <div class="growth-name">车型效果</div>
+        <div class="growth-val">+242.63万</div>
+        <div class="growth-pct">同比 +19.0%</div>
+        <div class="growth-base">基期 1,276万 &#8594; 本期 1,519万</div>
+      </div>
+      <div class="growth-card">
+        <div class="growth-name">聚星</div>
+        <div class="growth-val">+81.38万</div>
+        <div class="growth-pct">同比 +24.5%</div>
+        <div class="growth-base">基期 332万 &#8594; 本期 413万</div>
+      </div>
+      <div class="growth-card">
+        <div class="growth-name">二手车</div>
+        <div class="growth-val">+12.09万</div>
+        <div class="growth-pct">同比 +14.1%</div>
+        <div class="growth-base">基期 86万 &#8594; 本期 98万</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SUGGESTIONS -->
+  <div class="section">
+    <div class="section-header">
+      <div class="section-icon blue">&#128161;</div>
+      <div>
+        <div class="section-title">行动建议</div>
+        <div class="section-desc">针对核心跌幅来源的短期行动项</div>
+      </div>
+    </div>
+    <div class="suggest-list">
+      <div class="suggest-item">
+        <div class="suggest-num">1</div>
+        <div class="suggest-content">
+          <div class="suggest-title">重点跟进「阵地-官号-捷途汽车」(单项 -680万/-50.1%)</div>
+          <div class="suggest-desc">捷途汽车是最大单一下拉项，仍有存量投放（本期677万），说明客户未完全流失。建议优先复盘其投放策略是否发生变化，是否有预算转移或平台分配调整，制定针对性的挽回方案。</div>
+        </div>
+      </div>
+      <div class="suggest-item">
+        <div class="suggest-num">2</div>
+        <div class="suggest-content">
+          <div class="suggest-title">排查「品牌」业务线整体归零原因（9家合计 -679万）</div>
+          <div class="suggest-desc">一汽红旗、东风日产、上汽大众等9家集团本期品牌投放全部清零，属系统性风险而非个案。建议从产品形态/政策/定价层面整体诊断，确认是否存在竞品替代或预算结构性迁移。</div>
+        </div>
+      </div>
+      <div class="suggest-item">
+        <div class="suggest-num">3</div>
+        <div class="suggest-content">
+          <div class="suggest-title">东风日产「品牌+车型效果」双线流失，合计 -640万，需独立立项跟进</div>
+          <div class="suggest-desc">东风日产在「品牌」(-366万) 和「车型效果」(-274万) 两条线均大幅萎缩，本期两线消耗均接近零。该集团历史体量较大，建议作为优先级最高的 VIP 客户进行专项复盘。</div>
+        </div>
+      </div>
+      <div class="suggest-item">
+        <div class="suggest-num">4</div>
+        <div class="suggest-content">
+          <div class="suggest-title">「车型效果」增长势头强劲，建议加大资源倾斜</div>
+          <div class="suggest-desc">车型效果同比 +19% (+243万)，且本期体量(1,519万)已超越「品牌」业务线，说明效果类投放被市场认可。建议在预算规划中适当提升该业务线的配额，同时分析增长的具体客户结构，寻找可复制路径。</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="footer">
+  本报告由磁力番薯 DataAgent 自动生成 · 数据来源：KwaiBI OLAP shareId=56744805 · 汽车业务中心 · 2026-05-28
+</div>
+
+<script>
+// ======= BAR CHART =======
+const ctxBar = document.getElementById('bizBarChart').getContext('2d');
+const bizLabels = ['阵地-官号','统签统付\n经销商','品牌','统签单付\n经销商','车型效果','聚星','二手车'];
+const bizBase = [3793, 1761, 1608, 7363, 1276, 332, 86];
+const bizCur  = [2641,  898,  929, 6878, 1519, 413, 98];
+
+new Chart(ctxBar, {
+  type: 'bar',
+  data: {
+    labels: ['阵地-官号','统签统付','品牌','统签单付','车型效果','聚星','二手车'],
+    datasets: [
+      {
+        label: '基期',
+        data: bizBase,
+        backgroundColor: 'rgba(144,164,174,0.6)',
+        borderColor: 'rgba(144,164,174,1)',
+        borderWidth: 1,
+        borderRadius: 4
+      },
+      {
+        label: '本期',
+        data: bizCur,
+        backgroundColor: bizCur.map((v,i) => v >= bizBase[i] ? 'rgba(67,160,71,0.75)' : 'rgba(229,57,53,0.75)'),
+        borderColor: bizCur.map((v,i) => v >= bizBase[i] ? '#43a047' : '#e53935'),
+        borderWidth: 1,
+        borderRadius: 4
+      }
+    ]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { position: 'top', labels: { font: { size: 11 }, boxWidth: 12 } },
+      tooltip: {
+        callbacks: {
+          label: ctx => ctx.dataset.label + ': ' + ctx.parsed.y.toLocaleString() + '万'
+        }
+      }
+    },
+    scales: {
+      x: { ticks: { font: { size: 11 } }, grid: { display: false } },
+      y: {
+        ticks: {
+          font: { size: 10 },
+          callback: v => v + '万'
+        },
+        grid: { color: 'rgba(0,0,0,0.05)' }
+      }
+    }
+  }
+});
+
+// ======= PIE CHART =======
+const ctxPie = document.getElementById('pieChart').getContext('2d');
+new Chart(ctxPie, {
+  type: 'doughnut',
+  data: {
+    labels: ['阵地-官号','统签统付','品牌','统签单付','车型效果','聚星','二手车'],
+    datasets: [{
+      data: [2641, 898, 929, 6878, 1519, 413, 98],
+      backgroundColor: [
+        '#e53935','#fb8c00','#fdd835','#1e88e5','#43a047','#8e24aa','#00acc1'
+      ],
+      borderWidth: 2,
+      borderColor: '#fff'
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: 'bottom',
+        labels: { font: { size: 10 }, boxWidth: 10, padding: 8 }
+      },
+      tooltip: {
+        callbacks: {
+          label: ctx => {
+            const total = ctx.dataset.data.reduce((a,b)=>a+b,0);
+            const pct = (ctx.parsed / total * 100).toFixed(1);
+            return ctx.label + ': ' + ctx.parsed.toLocaleString() + '万 (' + pct + '%)';
+          }
+        }
+      }
+    }
+  }
+});
+</script>
+</body>
+</html>
