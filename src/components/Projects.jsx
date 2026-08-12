@@ -3,7 +3,7 @@ import SectionHeading from "./SectionHeading";
 import BorderGlow from "./BorderGlow";
 
 /* ---------- 项目封面：非数据化呈现 ---------- */
-function ProjectCover({ index, label, title, tags, accentA, accentB, art }) {
+function ProjectCover({ index, label, title, tags, accentA, accentB, art, images }) {
   const artEl = {
     arcs: (
       <svg className="cover-art" viewBox="0 0 400 400" fill="none" stroke="currentColor" aria-hidden="true">
@@ -61,7 +61,15 @@ function ProjectCover({ index, label, title, tags, accentA, accentB, art }) {
       style={{ "--cover-a": accentA, "--cover-b": accentB }}
     >
       <span className="cover-index">{index}</span>
-      {artEl}
+      {images ? (
+        <div className="cover-gallery">
+          {images.map((src) => (
+            <img key={src} src={src} alt="" loading="lazy" decoding="async" />
+          ))}
+        </div>
+      ) : (
+        artEl
+      )}
       <div className="cover-copy">
         <span className="cover-label">{label}</span>
         <h4 className="cover-title">{title}</h4>
@@ -288,9 +296,9 @@ const WORKS = [
     cover: (
       <ProjectCover
         index="08"
-        label="MONTHLY MARKETING · SNAPSHOT"
-        title="月度营销情况"
-        tags="消耗 · 转化 · 经营指标"
+        label="VISIT WEEKLY · MONITOR"
+        title="拜访周边监控看板"
+        tags="走访进度 · 经营表现 · 预警"
         accentA="#b48aff"
         accentB="#5e2f8f"
         art="dots"
@@ -306,12 +314,12 @@ const WORKS = [
     cover: (
       <ProjectCover
         index="09"
-        label="BUSINESS MONITOR"
+        label="DAILY BUSINESS · MONITOR"
         title="经营情况监控"
         tags="经营指标 · 持续跟踪 · 预警"
         accentA="#8b6cf5"
         accentB="#3a2a7d"
-        art="cross"
+        images={["/projects/business-monitor.png", "/projects/daily-report.jpg"]}
       />
     ),
   },

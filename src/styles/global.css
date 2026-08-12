@@ -917,8 +917,45 @@ a {
   transition: transform 0.8s cubic-bezier(0.22, 0.61, 0.36, 1);
 }
 
+.cover-gallery {
+  position: absolute;
+  top: 50%;
+  right: clamp(26px, 5vw, 72px);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  transform: translateY(-50%);
+  z-index: 1;
+}
+
+.cover-gallery img {
+  height: clamp(150px, 15vw, 235px);
+  width: auto;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  box-shadow: 0 20px 44px rgba(0, 0, 0, 0.5), 0 0 26px rgba(139, 108, 245, 0.16);
+  object-fit: cover;
+  transition: transform 0.8s cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+.cover-gallery img:first-child {
+  transform: rotate(-3deg);
+}
+
+.cover-gallery img:last-child {
+  transform: rotate(2.5deg);
+}
+
+.project-cover:has(.cover-gallery) .cover-copy {
+  max-width: 52%;
+}
+
 .project-card:hover .cover-art {
   transform: translateY(-8px) scale(1.03);
+}
+
+.project-card:hover .cover-gallery img {
+  transform: translateY(-7px);
 }
 
 .cover-copy {
@@ -1121,6 +1158,11 @@ a {
   opacity: 0.45;
 }
 
+.work-card .cover-gallery img {
+  height: clamp(118px, 12vw, 185px);
+  border-radius: 8px;
+}
+
 .work-card .cover-index {
   top: 20px;
   right: 24px;
@@ -1143,6 +1185,10 @@ a {
 
 .work-card:hover .cover-art {
   transform: translateY(-6px) scale(1.03);
+}
+
+.work-card:hover .cover-gallery img {
+  transform: translateY(-5px);
 }
 
 .work-open {
