@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>经营情况监控 · 日报看板</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+      background: #0a0a10;
+      color: #e8e6f2;
+      min-height: 100vh;
+      padding: 48px 24px 72px;
+    }
+    .wrap { max-width: 1280px; margin: 0 auto; }
+    .head {
+      text-align: center;
+      margin-bottom: 48px;
+    }
+    .head h1 {
+      font-size: 28px;
+      font-weight: 650;
+      letter-spacing: 0.02em;
+    }
+    .head p {
+      margin-top: 12px;
+      font-size: 13px;
+      letter-spacing: 0.14em;
+      color: #9a90c4;
+      text-transform: uppercase;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+      gap: 32px;
+      justify-items: center;
+    }
+    .card {
+      width: 100%;
+      max-width: 560px;
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 16px;
+      overflow: hidden;
+      transition: transform 0.4s ease, border-color 0.4s ease;
+    }
+    .card:hover {
+      transform: translateY(-4px);
+      border-color: rgba(139, 108, 245, 0.5);
+    }
+    .card img {
+      display: block;
+      width: 100%;
+      height: auto;
+      max-height: 78vh;
+      object-fit: contain;
+      background: #fff;
+    }
+    .card figcaption {
+      padding: 14px 18px;
+      font-size: 15px;
+      font-weight: 600;
+      color: #d8d3ef;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .back {
+      display: inline-block;
+      margin: 40px 0 0;
+      color: #a78bfa;
+      text-decoration: none;
+      font-size: 14px;
+    }
+    .back:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header class="head">
+      <h1>经营情况监控 · 日报看板</h1>
+      <p>BUSINESS MONITOR &amp; DAILY REPORT</p>
+    </header>
+    <main class="grid">
+      <figure class="card">
+        <img src="business-monitor.png" alt="经营情况监控" />
+        <figcaption>经营情况监控</figcaption>
+      </figure>
+      <figure class="card">
+        <img src="daily-report.jpg" alt="日报看板" />
+        <figcaption>日报看板</figcaption>
+      </figure>
+    </main>
+    <a class="back" href="javascript:history.back()">← 返回作品集</a>
+  </div>
+</body>
+</html>

@@ -3,7 +3,7 @@ import SectionHeading from "./SectionHeading";
 import BorderGlow from "./BorderGlow";
 
 /* ---------- 项目封面：非数据化呈现 ---------- */
-function ProjectCover({ index, label, title, tags, accentA, accentB, art, images }) {
+function ProjectCover({ index, label, title, tags, accentA, accentB, art }) {
   const artEl = {
     arcs: (
       <svg className="cover-art" viewBox="0 0 400 400" fill="none" stroke="currentColor" aria-hidden="true">
@@ -61,15 +61,7 @@ function ProjectCover({ index, label, title, tags, accentA, accentB, art, images
       style={{ "--cover-a": accentA, "--cover-b": accentB }}
     >
       <span className="cover-index">{index}</span>
-      {images ? (
-        <div className="cover-gallery">
-          {images.map((src) => (
-            <img key={src} src={src} alt="" loading="lazy" decoding="async" />
-          ))}
-        </div>
-      ) : (
-        artEl
-      )}
+      {artEl}
       <div className="cover-copy">
         <span className="cover-label">{label}</span>
         <h4 className="cover-title">{title}</h4>
@@ -310,16 +302,16 @@ const WORKS = [
     cat: "监控看板",
     year: "2026",
     desc: "经营情况监控看板，持续跟踪核心经营指标与预警信号。",
-    href: "/projects/business-monitor.png",
+    href: "/projects/business-monitor.html",
     cover: (
       <ProjectCover
         index="09"
-        label="DAILY BUSINESS · MONITOR"
+        label="BUSINESS MONITOR"
         title="经营情况监控"
         tags="经营指标 · 持续跟踪 · 预警"
         accentA="#8b6cf5"
         accentB="#3a2a7d"
-        images={["/projects/business-monitor.png", "/projects/daily-report.jpg"]}
+        art="cross"
       />
     ),
   },
