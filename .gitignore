@@ -4,3 +4,6 @@ dist
 *.log
 .vercel
 .env*
+/jingyu/
+/jingyu h/
+/jingyu 个人/
